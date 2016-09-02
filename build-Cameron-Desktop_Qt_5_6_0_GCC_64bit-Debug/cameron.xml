@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cameron>
+	<cameras>
+		<camera id="1"  url="rtsp://192.168.2.122:554?user=admin&amp;password=&amp;channel=1&amp;stream=0.sdp" />		
+	</cameras>
+</cameron>
