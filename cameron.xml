@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cameron>
+	<camera id="1" url="192.168.2.122:554?user=admin&password=&channel=1&stream=0.sdp" />
+	<camera id="2" url="192.168.2.122:554?user=admin&password=&channel=1&stream=0.sdp" />	
+</cameron>
