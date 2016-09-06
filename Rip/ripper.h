@@ -18,6 +18,8 @@ public:
     explicit Ripper(RTSP_Stream * streamer, QString folder);
     ~Ripper();
 
+    QString savePath();
+
 signals:
     void complete();
 
@@ -30,6 +32,7 @@ private:
     QString _folder;
     RTSP_Stream * _streamer;
     int _framesOffset;
+    QString _savePath;
 };
 
 #endif // RIPPER_H

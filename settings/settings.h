@@ -6,7 +6,7 @@
 #include <QXmlStreamReader>
 
 #include "camera.h"
-
+#include "db/db.h"
 
 
 class Settings : public QObject
@@ -14,7 +14,7 @@ class Settings : public QObject
     Q_OBJECT
 public:
     explicit Settings(QObject *parent = 0);
-    bool load(TCams & cams);
+    bool load(TCams & cams, DB * db);
 
 
 

@@ -2,6 +2,7 @@
 #define APPCORE_H
 
 #include <QObject>
+
 #include "settings/settings.h"
 
 class AppCore : public QObject
@@ -17,6 +18,7 @@ public slots:
 private:
     Settings * _settings;
     TCams _cams;
+    DB * _db;
 };
 
 #endif // APPCORE_H

@@ -9,6 +9,7 @@ Ripper::Ripper(RTSP_Stream * streamer, QString folder) : QObject(0)
     _framesOffset = -1;
     _streamer = streamer;
     _folder = folder;
+    _savePath = QString("%1/rip-%2.h264").arg(_folder).arg(QDateTime::currentDateTime().toString("dd.MM.yy hh:mm:ss"));
 }
 
 void Ripper::process()
@@ -16,7 +17,7 @@ void Ripper::process()
     _toStop = false;
 
     //-- создаём новый файл для записи
-    QFile outFile(QString("%1/rip-%2.h264").arg(_folder).arg(QDateTime::currentDateTime().toString("dd.MM.yy hh:mm:ss")));
+    QFile outFile(_savePath);
     outFile.open(QIODevice::WriteOnly);
 
     //-- первым делом нужно получить SPS и PPS и засунуть в файл
@@ -42,6 +43,11 @@ void Ripper::process()
 void Ripper::stop()
 {
     _toStop = true;
+}
+
+QString Ripper::savePath()
+{
+    return _savePath;
 }
 
 

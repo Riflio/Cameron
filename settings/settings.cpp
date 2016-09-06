@@ -7,7 +7,7 @@ Settings::Settings(QObject *parent) : QObject(parent)
 }
 
 
-bool Settings::load(TCams & cams)
+bool Settings::load(TCams & cams, DB * db)
 {
 
     //_cams = cams;
@@ -32,6 +32,15 @@ bool Settings::load(TCams & cams)
 
         if (token == QXmlStreamReader::StartElement) {
 
+            if (xml.name() == "db") {
+                QXmlStreamAttributes attributes = xml.attributes();
+                if (! attributes.hasAttribute("host") || ! attributes.hasAttribute("db") ) return false;
+
+                db->setSettings(attributes.value("host").toString(), attributes.value("db").toString(), attributes.value("user").toString(), attributes.value("password").toString());
+
+                continue;
+            }
+
             if (xml.name() == "cameras")  continue;
 
             if (xml.name() == "camera") {
@@ -39,7 +48,7 @@ bool Settings::load(TCams & cams)
                 if (! attributes.hasAttribute("id") || ! attributes.hasAttribute("url") ) return false;
 
                 Camera * cam = new Camera(0);
-                cam->setSettings(attributes.value("url").toString());
+                cam->setSettings(attributes.value("url").toString(), attributes.value("id").toInt(), attributes.value("ripSecconds").toInt(), attributes.value("ripSavePath").toString() );
                 cams.append(cam);
 
             }

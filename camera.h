@@ -7,6 +7,7 @@
 #include "h264/h264_decoder.h"
 #include "Rip/ripper.h"
 
+#include <QtSql>
 
 using namespace NS_RSTP;
 using namespace NS_H264;
@@ -17,7 +18,7 @@ class Camera : public QObject
 public:
     explicit Camera(QObject * parent = 0);
 
-    bool setSettings(QString url ="", int ripSecconds =5 );
+    bool setSettings(QString url ="", int id=-1, int ripSecconds =5, QString savePath="." );
 
     QString url() { return _url; }
 
@@ -34,6 +35,7 @@ public slots:
     void ripStop();
 
 private:
+    int _id;
     QString _url;   
     RTSP * _rtsp;
     H264_Decoder * _decoder;
@@ -43,6 +45,8 @@ private:
     QTimer * _ripTimer;
     QThread * _ripThread;
     Ripper * _ripper;
+
+    QString _savePath;
 };
 
 typedef QList<Camera*> TCams;

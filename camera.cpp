@@ -14,11 +14,13 @@ Camera::Camera(QObject *parent) : QObject(parent)
 }
 
 
-bool Camera::setSettings(QString url, int ripSecconds)
+bool Camera::setSettings(QString url, int id, int ripSecconds, QString savePath)
 {
     qInfo()<<"Camera set settings "<<url<<ripSecconds;
+    _id = id;
     _url = url;
     _ripSecconds = ripSecconds;
+    _savePath = savePath;
 }
 
 
@@ -102,7 +104,7 @@ void Camera::ripStart()
     qInfo()<<"RIP Start";
 
     _ripThread = new QThread(this);
-    _ripper = new Ripper(_rtsp->getChannel(0)->streamer, ".");
+    _ripper = new Ripper(_rtsp->getChannel(0)->streamer, _savePath);
 
     connect(_ripThread, &QThread::started, _ripper, &Ripper::process ); //-- при запуске потока сразу начинаем работу
     connect( _ripper, &Ripper::complete, _ripThread, &QThread::quit ); //-- как только вся работа сделана или остановлена, останавливаем поток
@@ -111,6 +113,10 @@ void Camera::ripStart()
 
     _ripper->moveToThread(_ripThread);
     _ripThread->start();
+
+    QSqlQuery query;
+    query.exec( QString("INSERT INTO cameron_rips SET crr_camid=%1, crr_dt=\"%2\", crr_path=\"%3\", crr_action=\"%4\"").arg(_id).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss")).arg( _ripper->savePath() ).arg("move") );
+    qInfo()<<"Last query"<<query.lastQuery();
 
 }
 
