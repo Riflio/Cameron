@@ -4,6 +4,9 @@
 #include <QObject>
 
 #include "settings/settings.h"
+#include "Camera/cameras.h"
+#include "Server/server.h"
+
 
 class AppCore : public QObject
 {
@@ -17,8 +20,8 @@ public slots:
 
 private:
     Settings * _settings;
-    TCams _cams;
-    DB * _db;
+    Server * _server;
+    Cameras * _cameras;
 };
 
 #endif // APPCORE_H

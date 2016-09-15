@@ -5,8 +5,9 @@
 #include <QFile>
 #include <QXmlStreamReader>
 
-#include "camera.h"
-#include "db/db.h"
+#include "Server/server.h"
+#include "Camera/cameras.h"
+
 
 
 class Settings : public QObject
@@ -14,7 +15,7 @@ class Settings : public QObject
     Q_OBJECT
 public:
     explicit Settings(QObject *parent = 0);
-    bool load(TCams & cams, DB * db);
+    bool load(Cameras * cameras, Server * server);
 
 
 

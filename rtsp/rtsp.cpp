@@ -230,13 +230,9 @@ void RTSP::onSckConnectReadyRead()
             qDebug()<<"SDP channels count"<<_sdp->medias.length();
 
             for (int i = 0; i < _sdp->medias.length(); ++i) {
-
                 RTSP_Channel * channel = new RTSP_Channel(this);
                 channel->_sdpMedia = _sdp->medias.at(i);
                 _channels.append(channel);
-
-                qDebug()<<"SDP media attribute fmtp value"<<channel->sdpMedia()->attribytes.value("fmtp")->parameters.value("sprop-parameter-sets");
-
             }
 
 

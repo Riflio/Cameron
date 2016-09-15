@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QMap>
 #include <QMultiMap>
-
+#include <QHostAddress>
 
 /**
  * @brief Парсим SDP формат
@@ -17,11 +17,12 @@ public:
     ~SDP();
 
     bool parse(QByteArray data);
+    bool make(QByteArray & data);
 
     //-- время начала и ожидания сессии
     struct sTiming {
-        int start;
-        int stop;
+        int start =0;
+        int stop =0;
     };
 
     //-- Атрибуты базовой инфы/медиа
@@ -36,12 +37,12 @@ public:
     class sOrigin {
     public:
         int version; //-- версия протокола
-        QString sessionName; //-- название сессии
+        long int sessionID; //-- идентификатор сессии
+        long int sessionVer; //-- версия сессии
         QString creatorName; //-- идентификатор владельца
         QString netType; //-- сетевой протокол
-        int ipVersion; //-- версия сетевого протокола
-        QString adress; //-- адрес сетевого подключения
-        sTiming timing;
+        QHostAddress host; //-- адрес хоста
+        sTiming timing; //-- начало и завершение трансляции
         QMap<QString, sAttribute*> attribytes; //-- аттрибуты. Ключ - название атрибута
     };
 
@@ -59,9 +60,8 @@ public:
         int port; //-- порт
         QString profile; //-- профиль
         QList<QString> codecs; //-- поддерживаемые кодеки
-        QMap<QString, SDP::sAttribute*> attribytes; //-- аттрибуты. Ключ - название атрибута
+        QMap<QString, sAttribute*> attribytes; //-- аттрибуты. Ключ - название атрибута
     };
-
 
     sOrigin origin;
     QList<sMedia*> medias;

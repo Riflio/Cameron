@@ -5,18 +5,18 @@ AppCore::AppCore(QObject *parent) : QObject(parent)
 {
     _settings = new Settings(this);
 
-    _db = new DB(this);
+    _cameras = new Cameras(this);
+    _server = new Server(this, _cameras);
 
-    _settings->load(_cams, _db);
 
-    //-- коннектимся к базе
-    qInfo()<< "status "<<_db->connectDB();
-
-    //-- стартуем все камеры
-    QListIterator<Camera*> i(_cams);
-    while (i.hasNext()) {
-        i.next()->start();
+    if (!_settings->load(_cameras, _server)) {
+        qWarning()<< "Error load setitngs file.";
     }
+
+    if (!_server->startServer()) {
+        qWarning()<<"Unable start server";
+    }
+
 
 
 }
