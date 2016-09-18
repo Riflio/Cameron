@@ -147,7 +147,7 @@ bool SDP::make(QByteArray & data)
     dt.append( QString("s=%1").arg(origin.creatorName) ).append(rn);
     dt.append( QString("c=%1").arg(host) ).append(rn);
     dt.append( QString("t=%1 %2").arg(origin.timing.start).arg(origin.timing.stop) ).append(rn);
-    dt.append( QString("o=- %1 %2 %3").arg(origin.sessionID).arg(origin.sessionVer).arg(host) ).append(rn);
+    dt.append( QString("o=%1 %2 %3 %4").arg( (origin.sessionUser=="")? "-" : origin.sessionUser ).arg(origin.sessionID).arg(origin.sessionVer).arg(host) ).append(rn);
     dt.append( makeAttributes( origin.attribytes ) );
 
     //-- пошли по медиа-записям

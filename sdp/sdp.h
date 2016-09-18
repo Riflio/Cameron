@@ -37,6 +37,7 @@ public:
     class sOrigin {
     public:
         int version; //-- версия протокола
+        QString sessionUser; //-- юзер сессии
         long int sessionID; //-- идентификатор сессии
         long int sessionVer; //-- версия сессии
         QString creatorName; //-- идентификатор владельца
