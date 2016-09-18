@@ -6,6 +6,9 @@
 #include <QQueue>
 #include <QMutex>
 #include <QMutexLocker>
+
+#include "Assets/multiaccessbuffer.h"
+
 /**
  * @brief Базовый класс для принятого голого RTP пакета
  */
@@ -15,7 +18,7 @@ namespace NS_RSTP {
 
 typedef char BYTE;
 
-class RTP: public QObject
+class RTP: public QObject, private MultiAccessBuffer<QByteArray>
 {
     Q_OBJECT
 public:
@@ -25,7 +28,7 @@ public:
 
     bool newPacket(QByteArray packet);
 
-    bool getPacket();
+    bool getPacket(long long & offset, QByteArray & packet);
 
     int getPayloadStart();
     int getPayloadLength();
@@ -37,12 +40,12 @@ public:
     unsigned short getSequence();
 
 
-protected:
-    QByteArray _curPacket; //-- текущий пакет для обработки
 
-private:
-    QQueue<QByteArray> _packets;
+
+
+private:   
     QMutex _mutex;
+    QByteArray _curPacket; //-- текущий пакет для обработки
 };
 
 }

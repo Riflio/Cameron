@@ -3,7 +3,7 @@
 namespace NS_RSTP {
 
 RTP::RTP(QObject * parent):
-    QObject(parent), _mutex()
+    QObject(parent), MultiAccessBuffer(5000), _mutex()
 {
 
 }
@@ -19,9 +19,8 @@ bool RTP::newPacket(QByteArray packet)
 
     if (packet.isEmpty()) return false;
 
-    _packets.enqueue(packet);
+    return put(packet);
 
-    //qDebug()<<"RTP packets count"<<_packets.size();
 }
 
 
@@ -29,17 +28,13 @@ bool RTP::newPacket(QByteArray packet)
  * @brief берём из очереди следующий пакет и засовываем в _curPacket для дальнейших манипуляций
  * @return
  */
-bool RTP::getPacket()
+bool RTP::getPacket(long long & offset, QByteArray & packet)
 {
-    QMutexLocker locker(&_mutex);
+    if ( !get(offset, _curPacket) ) return false;
 
-    if (_packets.isEmpty()) return false;
-
-
-    _curPacket = _packets.dequeue();
+    packet = _curPacket;
 
     return true;
-
 }
 
 
