@@ -1,8 +1,8 @@
 #include "server.h"
 #include <QDebug>
 
-Server::Server(QObject *parent, Cameras * cameras)
-    :QObject(parent), _cameras(cameras)
+Server::Server(QObject *parent)
+    :QObject(parent)
 {
 
 }
@@ -11,6 +11,11 @@ bool Server::setSettings(QString host, int port)
 {
     _host = host;
     _port = port;
+}
+
+void Server::setCams(Cameras * cameras)
+{
+    _cameras = cameras;
 }
 
 /**
@@ -52,4 +57,7 @@ void Server::newClient()
 
 }
 
-
+Server::~Server()
+{
+    qInfo()<<"Server deleted";
+}

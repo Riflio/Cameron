@@ -14,8 +14,11 @@ class Server : public QObject
 {
     Q_OBJECT
 public:
-    explicit Server(QObject *parent = 0, Cameras * cameras = NULL);
+    explicit Server(QObject *parent = 0);
+    ~Server();
     bool setSettings(QString host, int port);
+
+    void setCams(Cameras * cameras);
 
 signals:
 
