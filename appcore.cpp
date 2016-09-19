@@ -5,9 +5,11 @@ AppCore::AppCore(QObject *parent) : QObject(parent)
 {
     _settings = new Settings(this);
 
-    _cameras = new Cameras(this);
-    _server = new Server(this, _cameras);
 
+    _server = new Server(this);
+    _cameras = new Cameras(this);
+
+    _server->setCams(_cameras);
 
     if (!_settings->load(_cameras, _server)) {
         qWarning()<< "Error load setitngs file.";
@@ -23,6 +25,6 @@ AppCore::AppCore(QObject *parent) : QObject(parent)
 
 AppCore::~AppCore()
 {
-    qDebug()<<"DELETE APPCORE";
 
+    qInfo()<<"AppCore deleted";
 }
