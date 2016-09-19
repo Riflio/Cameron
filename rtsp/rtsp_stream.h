@@ -3,44 +3,43 @@
 
 
 #include <QObject>
-#include <QByteArray>
-#include <QQueue>
-#include <QMutexLocker>
+#include <QUdpSocket>
+#include <QThread>
 
 #include "../rtp/rtp.h"
 
 
 /**
- * @brief Общий интерфейс стримеров, сдесь собираем готовые фреймы из RTP пакетов в круговой буфер (старые фреймы затираются новыми)
+ * @brief Общий интерфейс стримеров, сдесь собираем готовые фреймы из RTP пакетов
  */
 
 namespace NS_RSTP {
+
 class RTSP_Stream: public RTP
 
 {    
     Q_OBJECT
 public:
-    explicit RTSP_Stream(QObject * parent =0);
+    explicit RTSP_Stream(QObject * parent, int port);
 
-    const int MAX_FRAMES = 250;
-
-    QByteArray getFrame(int & offset);
-
-    int getOffset(int cur=0);
-
+    void process();
 
 
 signals:
-    void newFrame(QByteArray frame);
+    void finished();
+    void connected();
+    void error(QAbstractSocket::SocketError);
 
 public slots:
+    bool start();
+    void stop();
 
-protected:
-    QList<QByteArray> _frames; //-- буфер размером MAX_FRAMES из обработанных фреймов
-    long long _framesOffset;
-    void toNewFrame(QByteArray);
 private:
-    QMutex _mutex;
+    int _port;
+    QUdpSocket * _socket;
+    bool _started;
+    QThread * _thread;
 };
+
 }
 #endif // RTSP_STREAM_H

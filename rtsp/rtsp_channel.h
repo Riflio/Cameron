@@ -10,7 +10,7 @@
 #include "../sdp/sdp.h"
 #include "rtp/rtp.h"
 
-#include "../h264/h264_stream_rtp.h"
+#include "rtsp/rtsp_stream.h"
 
 namespace NS_RSTP {
 class RTSP;
@@ -24,19 +24,19 @@ public:
 
     int id();
     long session();
+
     SDP::sMedia * sdpMedia();
 
-    RTSP_Stream * streamer;
+    RTSP_Stream * getStreamer();
+
 
 
     friend class RTSP;
 
 signals:
     void connected();
-    void newReadedData(QByteArray data);
 
 public slots:
-    void onReadyRead();
     void setup(int port);
     void play();
     void teardown();
@@ -44,16 +44,13 @@ public slots:
 
 
 private:
-    QUdpSocket * _socket;
     RTSP * _connect;
-    int _id;
-    int _port;
+    int _id;    
     long _session;
     SDP::sMedia * _sdpMedia;
-
     QTimer * _aliveTimer;
+    RTSP_Stream * _streamer;
 
-    QThread * thread;
 };
 }
 #endif // RTSP_CHANNEL_H

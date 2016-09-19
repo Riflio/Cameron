@@ -8,7 +8,6 @@ RTSP_Channel::RTSP_Channel(RTSP * parent):
     QObject(parent)
 {
     _connect = parent;
-    _socket = NULL;
     _id = _connect->channelsCount();
     _session = 0;
 
@@ -26,24 +25,9 @@ void RTSP_Channel::setup(int port)
 {
     qInfo()<<"RTSP_Channel setup"<<port;
 
-    _port = port;
-    _socket = new QUdpSocket(this);
-
     //-- подготавливаем стример
-    //TODO: сделать обработку разными стримерами в зависимости от типа кодирования в DESCRIBE
-    streamer = new NS_H264::H264_Stream_RTP(0);
-
-    //-- засунем стример в новый поток, что бы не замедлял чтение UDP
-    thread = new QThread(this);
-    streamer->moveToThread(thread);
-    connect(thread, SIGNAL(started()), streamer, SLOT(process()) );
-
-    connect(_socket, SIGNAL(readyRead()), this, SLOT(onReadyRead()) );
-    connect(_socket, SIGNAL(connected()), this, SIGNAL(connected()) );
-
-    _socket->bind(port);
-
-    thread->start();
+    _streamer = new RTSP_Stream(this, port);
+    connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
 
     _connect->setup(id(), port);
 
@@ -56,15 +40,7 @@ void RTSP_Channel::play()
 {
     qInfo()<<"RTSP_Channel play";
 
-
-
-    //-- первым делом пишем базовые параметры
-    //-- sps и pps хранятся в sprop-parameter-sets, разделённые запятушкой, закодированные в base64
-    QStringList ps =  _sdpMedia->attribytes.value("fmtp")->parameters.value("sprop-parameter-sets").split(",");
-
-    ((NS_H264::H264_Stream_RTP*)streamer)->setPS( ps.at(0), ps.at(1) );
-
-
+    _streamer->start();
 
     _aliveTimer->start();
 
@@ -87,22 +63,6 @@ void RTSP_Channel::teardown()
 }
 
 
-/**
- * @brief Есть новые данные в потоке, передаём на парсинг в RTP
- */
-void RTSP_Channel::onReadyRead()
-{
-    QByteArray data;
-
-    data.resize(_socket->pendingDatagramSize());
-    _socket->readDatagram(data.data(), data.size() );
-
-    streamer->newPacket(data);
-
-}
-
-
-
 int RTSP_Channel::id()
 {
     return _id;
@@ -116,6 +76,11 @@ long RTSP_Channel::session()
 SDP::sMedia * RTSP_Channel::sdpMedia()
 {
     return _sdpMedia;
+}
+
+RTSP_Stream * RTSP_Channel::getStreamer()
+{
+    return _streamer;
 }
 
 

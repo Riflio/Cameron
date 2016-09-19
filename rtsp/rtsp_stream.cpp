@@ -1,77 +1,79 @@
 #include "rtsp_stream.h"
 #include <QDebug>
+
 namespace NS_RSTP {
 
-RTSP_Stream::RTSP_Stream(QObject * parent):
-    RTP(parent), _mutex()
+RTSP_Stream::RTSP_Stream(QObject * parent, int port):
+    RTP(0)
 {
-    _framesOffset = 0;
+    _port = port;
+    _started = false;
+
+    _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется
+    connect(_thread, &QThread::started, this, &RTSP_Stream::process); //-- при запуске потока сразу начинаем работу
+    connect( this, &RTSP_Stream::finished, _thread, &QThread::quit ); //-- как только вся работа сделана или остановлена, останавливаем поток
+    connect(_thread, &QThread::finished, this, &QObject::deleteLater ); //-- как только поток закончен удаляемся
+    connect(this, &QObject::destroyed, _thread, &QThread::deleteLater ); //-- Как только удалились, удаляем сам поток
+
+    connect(parent, &QObject::destroyed, this, &RTSP_Stream::stop); //-- как только родитель удаляется, останавливаем поток
+
+    moveToThread(_thread);
+
 }
 
 /**
- * @brief Отдаём фрейм из буфера относительно текущей позиции у того, кому нужно (что бы сразу несколько могли читать один буфер).
- * ну и заодно изменяем эту позицию, что бы каждый раз при запросе фрейма мог продолжить с того места, где остановился
- * ну или его пошлют нахуй, если будет долго думать (ограничитель MAX_FRAMES)
- * @return
+ * @brief Открываем сокет и читаем всё, что можем
+ * без сигналов/слотов т.к. мы в отдельном потоке =)
  */
-QByteArray RTSP_Stream::getFrame(int & offset)
+void RTSP_Stream::process()
 {
-    QMutexLocker locker(&_mutex);
+    _socket = new QUdpSocket(this);
 
-    if (_frames.empty() || offset>_framesOffset) return QByteArray(); //-- либо вообще нет фреймов, либо выше конца буфера - нет ничего нового для отдачи
 
-    //-- если буфер не заполнен, то за верхнюю границу принимаем то, на сколько заполнен, что бы не ждать заполнения
-    int UP_LIMIT = (_framesOffset<MAX_FRAMES)? _framesOffset : MAX_FRAMES;
+    connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)) ); //-- почему-то новый способ не воспринимает О_о
+    connect(_socket, &QUdpSocket::connected, this, &RTSP_Stream::connected);
 
-    if (offset==-1) { //-- не знают актуальной позиции, хотят начать сначала буфера
-        offset = (_framesOffset - UP_LIMIT ) + 1;
+    if (!_socket->bind(_port)) { return; }
+
+    while (true) {
+
+        if (!_started) { break; }
+
+        if (_socket->hasPendingDatagrams()) {
+            QByteArray data;
+
+            data.resize(_socket->pendingDatagramSize());
+            _socket->readDatagram(data.data(), data.size() );
+
+            newPacket(data);
+        }
+
     }
 
-    int index =  UP_LIMIT - (_framesOffset - offset)  - 1;
-
-    if (index<0) { //-- буфер уже сделал круг, кто обратился за фреймом слишком долго думал - установим его позицию в начало буфера
-        offset =  (_framesOffset - UP_LIMIT ) + 2; //-- +2 потому что в этот раз мы уже отдадим элемент
-        index = 0;
-    } else  {
-        offset++;
-    }
-
-    return _frames.at(index);
+    emit finished();
 
 }
 
 
-/**
- * @brief Отдаём наще текущее смещение, если нужно, то относительно заданного
- * @param cur заданное смещение
- * @return
- */
-int RTSP_Stream::getOffset(int cur)
+bool RTSP_Stream::start()
 {
-    return _framesOffset - cur;
-}
-
-/**
- * @brief Добавляем новый фрейм в буфер
- */
-void RTSP_Stream::toNewFrame(QByteArray frame)
-{
-    QMutexLocker locker(&_mutex);
-
-    if (frame.isEmpty()) return;
-
-
-    if (_frames.size()>=MAX_FRAMES) {
-        _frames.takeFirst();
+    if (!_started) {
+        _started = true;
+        _thread->start();
     }
 
-    _frames.append(frame);
-
-    //qDebug()<<"RTSP stream frames count"<<_frames.size();
-
-   _framesOffset++;
-
-    emit newFrame(frame);
+    return true;
 }
+
+void RTSP_Stream::stop()
+{
+    if (!_started) {
+        this->deleteLater();
+    }
+
+    _started = false;
+}
+
+
 
 }
