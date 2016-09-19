@@ -8,7 +8,7 @@ Cameras_Camera::Cameras_Camera(QObject *parent) : QObject(parent)
     _status = S_NONE;
     _url = "";
     _rtsp = new RTSP(this);
-
+    _clientsCount = 0;
 
 }
 
@@ -69,12 +69,24 @@ void Cameras_Camera::onSetuped(int)
 bool Cameras_Camera::play()
 {
     qInfo()<<"Camera play";
-     _rtsp->getChannel(0)->play();
-     return true;
+
+    _clientsCount++;
+
+    if ( _status & S_PLAYED ) return true; //-- нам незачем дважды запускать
+
+    _rtsp->getChannel(0)->play();
+    return true;
 }
 
 bool Cameras_Camera::stop()
 {
+    _clientsCount--;
+
+    if ( (_status & S_PLAYED)  && _clientsCount<=0) { //-- если запущена и не осталось больше подключившихся
+        _rtsp->getChannel(0)->teardown();
+        _status &= ~S_PLAYED;
+    }
+
     return true;
 }
 
@@ -88,9 +100,21 @@ void Cameras_Camera::onPlayed(int)
 
 }
 
+/**
+ * @brief  Отдаём SDP медиа инфу о камере
+ * @return
+ */
 SDP::sMedia * Cameras_Camera::getSDPMedia()
 {
     qInfo()<<"Camera getSDP";
     return _rtsp->getChannel(0)->sdpMedia();
 }
 
+/**
+ * @brief Отдаём стример потока камеры
+ * @return
+ */
+NS_RSTP::RTSP_Stream * Cameras_Camera::getStreamer()
+{
+    return _rtsp->getChannel(0)->streamer;
+}

@@ -21,6 +21,16 @@ Cameras_Camera * Cameras::newCam(int id)
 }
 
 /**
+ * @brief Отдаём указанную камеру
+ * @param id
+ * @return
+ */
+Cameras_Camera * Cameras::getCam(int id)
+{
+    return _cams.value(id, NULL);
+}
+
+/**
  * @brief Собираем SDP со всех камер, подменяем айдишником камеры паарметр управления
  * @return
  */
@@ -63,4 +73,9 @@ SDP * Cameras::getTotalSDP()
 TCams Cameras::getCams()
 {
     return _cams;
+}
+
+Cameras::~Cameras()
+{
+    qInfo()<<"Cameras deleted";
 }

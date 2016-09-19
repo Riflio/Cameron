@@ -8,7 +8,6 @@
 
 
 using namespace NS_RSTP;
-using namespace NS_H264;
 
 class Cameras_Camera : public QObject
 {
@@ -36,6 +35,7 @@ public:
     bool stop();
 
     SDP::sMedia * getSDPMedia();
+    NS_RSTP::RTSP_Stream * getStreamer();
 
 signals:
 
@@ -49,6 +49,7 @@ private:
     QString _url;
     RTSP * _rtsp;
     int _status;
+    int _clientsCount;
 };
 
 #endif // CAMERAS_CAMERA_H

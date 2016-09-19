@@ -11,10 +11,12 @@ class Cameras : public QObject
     Q_OBJECT
 public:
     explicit Cameras(QObject *parent = 0);
-
+    ~Cameras();
     Cameras_Camera * newCam(int id);
+    Cameras_Camera * getCam(int id);
 
     TCams getCams();
+
 
     SDP * getTotalSDP();
 
