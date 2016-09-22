@@ -17,6 +17,7 @@ public:
 signals:
 
 public slots:
+    void appStart();
 
 private:
     Settings * _settings;

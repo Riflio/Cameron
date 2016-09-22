@@ -33,12 +33,15 @@ public slots:
 
 private:
     QUdpSocket * _socket;
+
     QHostAddress _host;
+    int _port;
+    int _id;
+
     QThread * _thread;
     Cameras_Camera * _cam;
 
-    int _id;
-    int _port;
+
     bool _started;
 
     long long int _buffOffset;

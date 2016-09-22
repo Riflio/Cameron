@@ -3,6 +3,12 @@
 
 AppCore::AppCore(QObject *parent) : QObject(parent)
 {
+
+}
+
+
+void AppCore::appStart()
+{
     _settings = new Settings(this);
 
 
@@ -18,9 +24,6 @@ AppCore::AppCore(QObject *parent) : QObject(parent)
     if (!_server->startServer()) {
         qWarning()<<"Unable start server";
     }
-
-
-
 }
 
 AppCore::~AppCore()

@@ -13,7 +13,7 @@
 template <class BufType>  class MultiAccessBuffer
 {
 public:
-    MultiAccessBuffer(long long int max): _max(max), _offset(0), _mutex() {  }
+    MultiAccessBuffer(long long int max=1000): _max(max), _offset(0), _mutex() {  }
 
     bool put(const BufType & data)
     {
@@ -63,8 +63,9 @@ public:
 
 private:
     QList<BufType> _buffer;
-    long long int _offset;
     long long int _max; //-- максимальный размер буфера
+    long long int _offset; //-- счётчик добавленных данных что бы знать относительное смещение желающих
+
 
     QMutex _mutex;
 };

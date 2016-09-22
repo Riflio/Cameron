@@ -285,7 +285,7 @@ void Server_Client::answerGETPARAMETER(int cseq)
  */
 void Server_Client::streamFinished(int streamID)
 {
-    Server_Client_Streamer * streamer =  _streamers.takeAt(streamID); //-- удаляем из стримеров
+    _streamers.takeAt(streamID); //-- удаляем из стримеров
 }
 
 

@@ -11,6 +11,7 @@ bool Server::setSettings(QString host, int port)
 {
     _host = host;
     _port = port;
+    return true;
 }
 
 void Server::setCams(Cameras * cameras)

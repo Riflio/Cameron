@@ -3,7 +3,7 @@
 #include <QDebug>
 
 Server_Client_Streamer::Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id, Cameras_Camera * cam)
-    : QObject(0), _thread(0),  _host(host), _port(port), _id(id), _cam(cam)
+    : QObject(0),  _host(host), _port(port), _id(id), _thread(0), _cam(cam)
 {
 
     _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется

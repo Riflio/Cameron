@@ -54,8 +54,7 @@ public slots:
     void onSckConnectReadyRead();
     void onSckConnectConnected();
     void onSckConnectDisconnected();
-    void onSckConnectError(QAbstractSocket::SocketError);
-    void onSckConnectBytesWritten(qint64);
+    void onSckConnectError(QAbstractSocket::SocketError);    
 
 private:
     QTcpSocket * _sckConnect; //-- сокет для общения

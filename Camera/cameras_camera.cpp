@@ -23,6 +23,7 @@ bool Cameras_Camera::setSettings(QString url, int id, int channel, int streamPor
     _url = url;
     _channel = channel;
     _streamPort = streamPort;
+    return true;
 }
 
 

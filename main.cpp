@@ -1,7 +1,7 @@
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
-#include "appcore.h"
 #include <QApplication>
+#include <QCoreApplication>
+#include "appcore.h"
+
 
 #include <QDateTime>
 void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
@@ -50,15 +50,14 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const Q
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    QCoreApplication a(argc, argv);
+
 
     //qInstallMessageHandler(myMessageHandler);
 
 
-    QQmlApplicationEngine engine;
-    engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+    AppCore * appCore = new AppCore(0);
+    appCore->appStart();
 
-    AppCore * appCore = new AppCore(engine.rootObjects().at(0));
-
-    return app.exec();
+    return a.exec();
 }

@@ -11,9 +11,7 @@ RTSP::RTSP(QObject *parent) : QObject(parent)
     connect(_sckConnect, SIGNAL(readyRead()), this, SLOT(onSckConnectReadyRead()));
     connect(_sckConnect, SIGNAL(connected()), this, SLOT(onSckConnectConnected()));
     connect(_sckConnect, SIGNAL(disconnected()), this, SLOT(onSckConnectDisconnected()));
-    connect(_sckConnect, SIGNAL(error(QAbstractSocket::SocketError)),this, SLOT(onSckConnectError(QAbstractSocket::SocketError)));
-
-    connect(_sckConnect, SIGNAL(bytesWritten(qint64)), this, SLOT(onSckConnectBytesWritten(qint64)));
+    connect(_sckConnect, SIGNAL(error(QAbstractSocket::SocketError)),this, SLOT(onSckConnectError(QAbstractSocket::SocketError)));    
 }
 
 
@@ -126,7 +124,7 @@ void RTSP::alive(int channel)
     SendParams params;
     params.insert( "Session", QString::number( _channels.at(channel)->session()) );
 
-    int r = send(GET_PARAMETER, params);
+    send(GET_PARAMETER, params);
 }
 
 /**
@@ -326,20 +324,13 @@ RTSP_Channel * RTSP::getChannel(int id)
     return (id<channelsCount()) ? _channels[id] : NULL;
 }
 
-
-
-void RTSP::onSckConnectBytesWritten(qint64 b)
-{
-
-}
-
 void RTSP::onSckConnectDisconnected()
 {
     qInfo()<<"Camera socket disconnected";
     emit disconnected();
 }
 
-void RTSP::onSckConnectError(QAbstractSocket::SocketError err)
+void RTSP::onSckConnectError(QAbstractSocket::SocketError)
 {
     qWarning()<<"Camera socket error: "<< _sckConnect->errorString();
 }
