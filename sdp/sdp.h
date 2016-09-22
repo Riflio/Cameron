@@ -7,7 +7,7 @@
 #include <QHostAddress>
 
 /**
- * @brief Парсим SDP формат
+ * @brief Парсим/формируем SDP формат
  */
 class SDP : public QObject
 {

@@ -150,7 +150,6 @@ void RTSP::teardown(int channel)
  */
 void RTSP::onSckConnectReadyRead()
 {
-    qInfo()<<"RTSP answer";
 
     /**
      * Ответ может состоять из двух частей всё, что до пустой строки будем считать заголовком,
@@ -160,7 +159,7 @@ void RTSP::onSckConnectReadyRead()
 
     QString responseText = _sckConnect->readAll();
 
-    qDebug()<<responseText;
+    qInfo()<<"RTSP answer"<<responseText;
 
     //-- разделяем построчно
     QStringList responseList = responseText.split("\r\n");
@@ -331,12 +330,13 @@ RTSP_Channel * RTSP::getChannel(int id)
 
 void RTSP::onSckConnectBytesWritten(qint64 b)
 {
-    qDebug()<<"Bytres written"<<b;
+
 }
 
 void RTSP::onSckConnectDisconnected()
 {
     qInfo()<<"Camera socket disconnected";
+    emit disconnected();
 }
 
 void RTSP::onSckConnectError(QAbstractSocket::SocketError err)

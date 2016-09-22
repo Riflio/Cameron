@@ -35,6 +35,7 @@ public:
 
 signals:
     void connected();
+    void disconnected();
 
 public slots:
     void setup(int port);

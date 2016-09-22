@@ -62,9 +62,9 @@ SDP * Cameras::getTotalSDP()
 
     }
 
+    //-- Выставим базовые сведения SDP, что бы хоть что-то было
     SDP::sOrigin origin;
     origin.version=0;
-
     sdp->origin = origin;
 
     return sdp;

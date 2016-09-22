@@ -6,6 +6,9 @@
 
 typedef QHash<int, Cameras_Camera*> TCams;
 
+/**
+ * @brief Управляем списком камер
+ */
 class Cameras : public QObject
 {
     Q_OBJECT

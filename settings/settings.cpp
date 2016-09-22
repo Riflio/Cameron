@@ -41,7 +41,12 @@ bool Settings::load(Cameras * cameras, Server * server)
                 QXmlStreamAttributes attributes = xml.attributes();
                 if (! attributes.hasAttribute("id") || ! attributes.hasAttribute("url") ) return false;
 
-                cameras->newCam(attributes.value("id").toInt())->setSettings( attributes.value("url").toString(), attributes.value("id").toInt() );
+                cameras->newCam(attributes.value("id").toInt())->setSettings(
+                            attributes.value("url").toString(),
+                            attributes.value("id").toInt(),
+                            attributes.value("channel").toInt(),
+                            attributes.value("streamPort").toInt()
+                );
 
             }
 

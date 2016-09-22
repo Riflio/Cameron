@@ -9,7 +9,7 @@
 #include "Camera/cameras_camera.h"
 
 /**
- * @brief Берём фрейм от камеры и отсылает клиенту
+ * @brief Запускаем камеру, берём фреймы и отсылает по указанным host и port
  */
 class Server_Client_Streamer : public QObject
 {

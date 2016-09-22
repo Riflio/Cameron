@@ -32,6 +32,7 @@ void RTSP_Stream::process()
 
     connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)) ); //-- почему-то новый способ не воспринимает О_о
     connect(_socket, &QUdpSocket::connected, this, &RTSP_Stream::connected);
+    connect(_socket, &QUdpSocket::disconnected, this, &RTSP_Stream::disconnected);
 
     if (!_socket->bind(_port)) { return; }
 
@@ -42,14 +43,19 @@ void RTSP_Stream::process()
         if (_socket->hasPendingDatagrams()) {
             QByteArray data;
 
+
+
             data.resize(_socket->pendingDatagramSize());
             _socket->readDatagram(data.data(), data.size() );
 
             newPacket(data);
         }
 
+        QApplication::processEvents(); //-- мы не жадные
+
     }
 
+    _socket->close();
     emit finished();
 
 }
@@ -67,11 +73,17 @@ bool RTSP_Stream::start()
 
 void RTSP_Stream::stop()
 {
+    qInfo()<<"RTSP Stream stop";
     if (!_started) {
         this->deleteLater();
     }
 
     _started = false;
+}
+
+RTSP_Stream::~RTSP_Stream()
+{
+    qInfo()<<"RTSP Stream deleted";
 }
 
 

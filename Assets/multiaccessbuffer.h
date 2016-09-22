@@ -7,6 +7,7 @@
 #include <QDebug>
 /**
 * @brief The MultiAccessBuffer class
+* Потоко-безопасный круговой буфер размером (max) с доступом нескольких желающих с того места+1, где они в прошлый раз брали данные (get) не зависимо от остальных
 */
 
 template <class BufType>  class MultiAccessBuffer

@@ -20,11 +20,9 @@ int Server_Client::clientID()
  */
 void Server_Client::request()
 {
-    qInfo()<<"New request";
-
     QString data = _socket->readAll();
 
-    qInfo()<< data;
+     qInfo()<<"New client request"<< data;
 
     //-- разбираем по строкам
     QStringList dataList = data.split("\r\n");
@@ -309,7 +307,7 @@ void Server_Client::answer(bool status, int cseq, QByteArray data, bool lastRN)
 
     if (lastRN) { data.append("\r\n"); }
 
-    qInfo()<<"Answer "<<data;
+    qInfo()<<"Answer to request "<<data;
 
     _socket->write(data);
 }

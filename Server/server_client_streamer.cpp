@@ -28,23 +28,28 @@ int Server_Client_Streamer::id()
 
 void Server_Client_Streamer::process()
 {
-    qInfo()<<"Client streamer process";
+    qInfo()<<"Client streamer process"<<_cam->getStreamer();
 
     _socket = new QUdpSocket(this);
+    //TODO: добавить обработку ошибок потока
+
+    RTSP_Stream * streamer =  _cam->getStreamer();
 
     while (true) {
         if (!_started) { break; }
 
         QByteArray frame;
 
-        if ( !_cam->getStreamer()->getPacket(_buffOffset, frame) ) continue;
+        if ( !streamer->getPacket(_buffOffset, frame) ) continue; //-- нет новых фреймов с камеры, курим бамбук
 
         _socket->writeDatagram(frame, _host, _port);
         _socket->waitForBytesWritten();
+
+         QApplication::processEvents(); //-- мы не жадничаем
     }
 
     //--
-
+    _socket->close();
     emit finished( id() );
 
 }
@@ -63,12 +68,22 @@ bool Server_Client_Streamer::start()
 
     if ( _started ) return true;
 
+    //-- запускаем камеру, если ещё не запущена
+    if (!_cam->start()) return false;
+
+    //-- ждём, пока запустится
+    while ( !(_cam->status() & Cameras_Camera::S_STARTED) ) { QApplication::processEvents(); }
+
+    //-- подготавливаем камеру к вещанию
+    if (!_cam->setup()) return false;
+
     //-- ждём, пока поток камеры настраивается
     while ( !(_cam->status() & Cameras_Camera::S_SETUPED) ) { QApplication::processEvents(); }
 
+    //-- запускаем вещание
     if (!_cam->play()) return false;
 
-    //-- и ждём, пока запустится
+    //-- и ждём, пока начнётся
     while ( !(_cam->status() & Cameras_Camera::S_PLAYED) ) { QApplication::processEvents(); }
 
     _started = true;

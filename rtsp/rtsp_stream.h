@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QThread>
+#include <QApplication>
 
 #include "../rtp/rtp.h"
 
@@ -21,6 +22,7 @@ class RTSP_Stream: public RTP
     Q_OBJECT
 public:
     explicit RTSP_Stream(QObject * parent, int port);
+    ~RTSP_Stream();
 
     void process();
 
@@ -28,6 +30,7 @@ public:
 signals:
     void finished();
     void connected();
+    void disconnected();
     void error(QAbstractSocket::SocketError);
 
 public slots:

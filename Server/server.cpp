@@ -30,6 +30,7 @@ bool Server::startServer()
 
     connect(_server, &QTcpServer::newConnection, this, &Server::newClient  );
 
+
     if (! _server->listen(_host, _port) ) {
         qWarning()<<"Unable start server"<<_server->errorString();
         return false;

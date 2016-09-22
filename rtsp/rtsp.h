@@ -39,6 +39,7 @@ public:
 
 signals:
     void connected(); //-- подключились к камере
+    void disconnected(); //--  отключились
     void setuped(int channel); //-- создали канал для передачи
     void played(int channel); //-- начали передачу
     void teardowned(int channel); //-- закончили передачу

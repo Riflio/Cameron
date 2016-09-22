@@ -28,6 +28,8 @@ void RTSP_Channel::setup(int port)
     //-- подготавливаем стример
     _streamer = new RTSP_Stream(this, port);
     connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
+    connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
+
 
     _connect->setup(id(), port);
 
@@ -86,7 +88,7 @@ RTSP_Stream * RTSP_Channel::getStreamer()
 
 RTSP_Channel::~RTSP_Channel()
 {
-
+    qInfo()<<"RTSP channel deleted";
 }
 
 }

@@ -10,6 +10,8 @@
 
 /**
  * @brief Подключившийся клиент
+ * обрабатываем запросы,
+ * отдаём инфу обо всех камерах
  */
 class Server;
 class Server_Client : public QObject
