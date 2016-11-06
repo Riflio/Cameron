@@ -6,7 +6,7 @@
 #include "settings/settings.h"
 #include "Camera/cameras.h"
 #include "Server/server.h"
-
+#include "Plugins/pluginsmanager.h"
 
 class AppCore : public QObject
 {
@@ -19,10 +19,12 @@ signals:
 public slots:
     void appStart();
 
+
 private:
     Settings * _settings;
     Server * _server;
     Cameras * _cameras;
+    PluginsManager * _pluginsManager;
 };
 
 #endif // APPCORE_H

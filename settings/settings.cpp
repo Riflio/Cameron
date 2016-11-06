@@ -7,7 +7,7 @@ Settings::Settings(QObject *parent) : QObject(parent)
 }
 
 
-bool Settings::load(Cameras * cameras, Server * server)
+bool Settings::load(Cameras * cameras, Server * server, PluginsManager * pluginsManager)
 {
 
     qInfo()<<"Load settings";
@@ -54,6 +54,11 @@ bool Settings::load(Cameras * cameras, Server * server)
                 QXmlStreamAttributes attributes = xml.attributes();
                 server->setSettings( attributes.value("host").toString(), attributes.value("port").toInt() );
             }
+
+             if (xml.name() == "plugins") {
+                QXmlStreamAttributes attributes = xml.attributes();
+                pluginsManager->setPath(attributes.value("dir").toString());
+             }
         }
 
     }

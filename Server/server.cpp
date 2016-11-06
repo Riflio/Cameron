@@ -31,11 +31,12 @@ bool Server::startServer()
 
     connect(_server, &QTcpServer::newConnection, this, &Server::newClient  );
 
-
     if (! _server->listen(_host, _port) ) {
-        qWarning()<<"Unable start server"<<_server->errorString();
+        qWarning()<<_server->errorString();
         return false;
     }
+
+    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(this));
 
     qInfo()<<"Server started";
 
@@ -52,6 +53,8 @@ void Server::newClient()
     QTcpSocket* clientSocket = _server->nextPendingConnection();
 
     Server_Client * client = new Server_Client(this, clientSocket, this);
+
+     emit Events->doAction("newClient", QVariantList()<<Events->ARG(client));
 
     connect(clientSocket, &QTcpSocket::readyRead, client, &Server_Client::request);
 

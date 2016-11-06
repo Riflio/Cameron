@@ -7,6 +7,8 @@
 
 #include "Camera/cameras.h"
 
+#include "Plugins/PluginEventsWrapper.h"
+
 /**
  * @brief The Server class
  */
