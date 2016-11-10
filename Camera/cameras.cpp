@@ -11,7 +11,7 @@ Cameras::Cameras(QObject *parent) : QObject(parent)
  * @param id
  * @return
  */
-Cameras_Camera * Cameras::newCam(int id)
+ICameras_Camera * Cameras::newCam(int id)
 {
     Cameras_Camera * cam = new Cameras_Camera(this);
 
@@ -25,7 +25,7 @@ Cameras_Camera * Cameras::newCam(int id)
  * @param id
  * @return
  */
-Cameras_Camera * Cameras::getCam(int id)
+ICameras_Camera * Cameras::getCam(int id)
 {
     return _cams.value(id, NULL);
 }
@@ -34,14 +34,14 @@ Cameras_Camera * Cameras::getCam(int id)
  * @brief Собираем SDP со всех камер, подменяем айдишником камеры паарметр управления
  * @return
  */
-SDP * Cameras::getTotalSDP()
+ISDP * Cameras::getTotalSDP()
 {
     TCams::iterator i;
 
     SDP * sdp = new SDP(this);
 
     for (i = _cams.begin(); i != _cams.end(); ++i) {
-        Cameras_Camera * cam = i.value();
+        Cameras_Camera * cam = static_cast<Cameras_Camera*>( i.value() );
 
         bool statusOK = true;
         while ( !(cam->status()&Cameras_Camera::S_CONNECTED) ) //-- придётся ждать коннекта, иначе нам не получить SDP
@@ -67,7 +67,7 @@ SDP * Cameras::getTotalSDP()
     origin.version=0;
     sdp->origin = origin;
 
-    return sdp;
+    return dynamic_cast<ISDP*>(sdp);
 }
 
 TCams Cameras::getCams()

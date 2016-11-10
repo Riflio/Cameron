@@ -2,9 +2,11 @@
 #define CAMERAS_CAMERA_H
 
 #include <QObject>
+#include "../Interfaces/icameras_camera.h"
 
 #include "rtsp/rtsp.h"
 
+#include "Plugins/PluginEventsWrapper.h"
 
 
 using namespace NS_RSTP;
@@ -12,20 +14,12 @@ using namespace NS_RSTP;
 /**
  * @brief Конкретная камера, точнее её один канал/поток не ебу пока что
  */
-class Cameras_Camera : public QObject
+class Cameras_Camera : public QObject, public ICameras_Camera
 {
     Q_OBJECT
 public:
     explicit Cameras_Camera(QObject *parent = 0);
-
-    enum Status {
-        S_NONE=0,
-        S_STARTED=2,
-        S_CONNECTED=4,
-        S_SETUPED=8,
-        S_PLAYED=16,
-        S_ERROR=32
-    };
+    virtual ~Cameras_Camera();
 
     bool setSettings(QString url ="", int id=-1, int channel=0, int streamPort=4041);
 
@@ -38,7 +32,7 @@ public:
     bool play();
     bool stop();
 
-    SDP::sMedia * getSDPMedia();
+    ISDP::sMedia * getSDPMedia();
     NS_RSTP::RTSP_Stream * getStreamer();
 
 signals:

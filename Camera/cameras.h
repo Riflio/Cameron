@@ -3,25 +3,26 @@
 
 #include <QObject>
 #include "cameras_camera.h"
+#include "../Interfaces/icameras.h"
 
-typedef QHash<int, Cameras_Camera*> TCams;
+
 
 /**
  * @brief Управляем списком камер
  */
-class Cameras : public QObject
+class Cameras : public QObject, public ICameras
 {
     Q_OBJECT
 public:
     explicit Cameras(QObject *parent = 0);
-    ~Cameras();
-    Cameras_Camera * newCam(int id);
-    Cameras_Camera * getCam(int id);
+    virtual ~Cameras();
+    ICameras_Camera * newCam(int id);
+    ICameras_Camera * getCam(int id);
 
     TCams getCams();
 
 
-    SDP * getTotalSDP();
+    ISDP * getTotalSDP();
 
 signals:
 

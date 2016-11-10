@@ -18,7 +18,6 @@ void AppCore::appStart()
 
     _server->setCams(_cameras);
 
-
     if (!_settings->load(_cameras, _server, _pluginsManager)) {
         qWarning()<< "Error load setitngs file.";
     }

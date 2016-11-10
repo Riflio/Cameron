@@ -146,7 +146,7 @@ void Server_Client::answerOPTIONS(int cseq)
 void Server_Client::answerDESCRIBE(int cseq)
 {
 
-    SDP * sdp = _server->_cameras->getTotalSDP();
+    SDP * sdp = dynamic_cast<SDP*>(_server->_cameras->getTotalSDP());
     sdp->origin.creatorName="Cameron";
     sdp->origin.netType="IN";
     sdp->origin.host=_server->_host;
@@ -245,7 +245,7 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, int camI
 {
     qInfo()<<"Answer SETUP"<<cseq<<videoPort<<camID;
 
-    Cameras_Camera * camera = _server->_cameras->getCam(camID);
+    Cameras_Camera * camera = static_cast<Cameras_Camera*>( _server->_cameras->getCam(camID) );
 
     if (camera == NULL ){
         qWarning()<<"Camera not found O_o";

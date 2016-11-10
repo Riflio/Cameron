@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTcpServer>
+#include "../Interfaces/iserver.h"
 #include "server_client.h"
 
 #include "Camera/cameras.h"
@@ -12,15 +13,16 @@
 /**
  * @brief The Server class
  */
-class Server : public QObject
+class Server : public QObject, public IServer
 {
     Q_OBJECT
 public:
     explicit Server(QObject *parent = 0);
-    ~Server();
+    virtual ~Server();
     bool setSettings(QString host, int port);
 
-    void setCams(Cameras * cameras);
+    void setCams(ICameras * cameras);
+    ICameras * getCams();
 
 signals:
 
@@ -35,7 +37,7 @@ private:
     QHash<int, Server_Client*> _clients;
     QHostAddress _host;
     int _port;
-    Cameras * _cameras;
+    ICameras * _cameras;
 
     friend Server_Client;
 };

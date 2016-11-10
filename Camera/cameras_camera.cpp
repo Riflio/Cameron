@@ -54,8 +54,9 @@ bool Cameras_Camera::start()
  */
 void Cameras_Camera::onCameraConnected()
 {
-    qInfo()<<"Camera connected ";     
+    qInfo()<<"Camera connected ";         
     _status |= S_CONNECTED;
+    emit Events->doAction("CameraConnected", QVariantList()<<Events->ARG(this));
 }
 
 /**
@@ -163,4 +164,10 @@ SDP::sMedia * Cameras_Camera::getSDPMedia()
 NS_RSTP::RTSP_Stream * Cameras_Camera::getStreamer()
 {
     return _rtsp->getChannel(_channel)->getStreamer();
+}
+
+
+Cameras_Camera::~Cameras_Camera()
+{
+
 }

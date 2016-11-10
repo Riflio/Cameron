@@ -14,7 +14,7 @@ bool Server::setSettings(QString host, int port)
     return true;
 }
 
-void Server::setCams(Cameras * cameras)
+void Server::setCams(ICameras * cameras)
 {
     _cameras = cameras;
 }
@@ -60,6 +60,11 @@ void Server::newClient()
 
     _clients.insert(client->clientID(), client);
 
+}
+
+ICameras * Server::getCams()
+{
+    return dynamic_cast<ICameras*>(_cameras);
 }
 
 Server::~Server()
