@@ -7,17 +7,17 @@
 #include <QThread>
 #include <QApplication>
 
+#include "../Interfaces/irtsp_stream.h"
 #include "../rtp/rtp.h"
 
 
 /**
- * @brief Общий интерфейс стримеров, сдесь собираем готовые фреймы из RTP пакетов
+ * @brief Общий для стримеров, сдесь собираем готовые фреймы из RTP пакетов
  */
 
 namespace NS_RSTP {
 
-class RTSP_Stream: public RTP
-
+class RTSP_Stream: public QObject, public RTP, public IRTSP_Stream
 {    
     Q_OBJECT
 public:

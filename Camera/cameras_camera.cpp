@@ -161,7 +161,7 @@ SDP::sMedia * Cameras_Camera::getSDPMedia()
  * @brief Отдаём стример потока камеры
  * @return
  */
-NS_RSTP::RTSP_Stream * Cameras_Camera::getStreamer()
+NS_RSTP::IRTSP_Stream * Cameras_Camera::getStreamer()
 {
     return _rtsp->getChannel(_channel)->getStreamer();
 }

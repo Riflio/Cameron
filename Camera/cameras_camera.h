@@ -33,7 +33,7 @@ public:
     bool stop();
 
     ISDP::sMedia * getSDPMedia();
-    NS_RSTP::RTSP_Stream * getStreamer();
+    NS_RSTP::IRTSP_Stream * getStreamer();
 
 signals:
 

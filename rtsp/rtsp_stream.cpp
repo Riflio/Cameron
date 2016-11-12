@@ -4,7 +4,7 @@
 namespace NS_RSTP {
 
 RTSP_Stream::RTSP_Stream(QObject * parent, int port):
-    RTP(0)
+  QObject(0), RTP()
 {
     _port = port;
     _started = false;

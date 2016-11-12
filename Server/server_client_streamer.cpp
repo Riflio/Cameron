@@ -33,7 +33,7 @@ void Server_Client_Streamer::process()
     _socket = new QUdpSocket(this);
     //TODO: добавить обработку ошибок потока
 
-    RTSP_Stream * streamer =  _cam->getStreamer();
+    IRTSP_Stream * streamer =  _cam->getStreamer();
 
     while (true) {
         if (!_started) { break; }

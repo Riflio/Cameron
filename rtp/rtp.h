@@ -6,7 +6,7 @@
 #include <QQueue>
 #include <QMutex>
 #include <QMutexLocker>
-
+#include "../Interfaces/irtp.h"
 #include "Assets/multiaccessbuffer.h"
 
 /**
@@ -15,14 +15,10 @@
 
 namespace NS_RSTP {
 
-
-typedef char BYTE;
-
-class RTP: public QObject, private MultiAccessBuffer<QByteArray>
+class RTP: public virtual IRTP, private MultiAccessBuffer<QByteArray>
 {
-    Q_OBJECT
 public:
-    explicit RTP(QObject * parent);
+    explicit RTP();
 
     const int RTP_HEADER_SIZE = 12;
 
@@ -38,10 +34,6 @@ public:
     BYTE  getCC();
     unsigned int getTimeStamp();
     unsigned short getSequence();
-
-
-
-
 
 private:   
     QMutex _mutex;

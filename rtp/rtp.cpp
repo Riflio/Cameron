@@ -2,8 +2,8 @@
 #include <QDebug>
 namespace NS_RSTP {
 
-RTP::RTP(QObject * parent):
-    QObject(parent), MultiAccessBuffer(5000), _mutex()
+RTP::RTP():
+   MultiAccessBuffer(5000), _mutex()
 {
 
 }
