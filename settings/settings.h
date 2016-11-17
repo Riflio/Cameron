@@ -8,7 +8,7 @@
 #include "Server/server.h"
 #include "Camera/cameras.h"
 #include "Plugins/pluginsmanager.h"
-
+#include "Plugins/PluginEventsWrapper.h"
 
 class Settings : public QObject
 {

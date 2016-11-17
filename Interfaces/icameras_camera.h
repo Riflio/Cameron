@@ -2,8 +2,8 @@
 #define ICAMERAS_CAMERA_H
 
 #include <QString>
-
 #include "isdp.h"
+#include "irtsp_stream.h"
 
 class ICameras_Camera
 {
@@ -27,6 +27,7 @@ public:
     virtual bool play()=0;
     virtual bool stop()=0;
     virtual ISDP::sMedia * getSDPMedia()=0;
+    virtual NS_RSTP::IRTSP_Stream * getStreamer()=0;
 };
 
 #endif // ICAMERAS_CAMERA_H

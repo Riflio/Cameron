@@ -2,9 +2,10 @@
 #define CAMERAS_CAMERA_H
 
 #include <QObject>
+#include "rtsp/rtsp.h"
 #include "../Interfaces/icameras_camera.h"
 
-#include "rtsp/rtsp.h"
+
 
 #include "Plugins/PluginEventsWrapper.h"
 
@@ -25,15 +26,15 @@ public:
 
     QString url() { return _url; }
 
+    int id();
     int status();
-
     bool start();
     bool setup();
     bool play();
     bool stop();
 
     ISDP::sMedia * getSDPMedia();
-    NS_RSTP::IRTSP_Stream * getStreamer();
+    IRTSP_Stream * getStreamer();
 
 signals:
 

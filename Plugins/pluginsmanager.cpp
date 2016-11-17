@@ -12,21 +12,17 @@ PluginsManager::PluginsManager(QObject *parent) : PluginEventsBase(parent)
     new PluginEvents(this);
 }
 
-void PluginsManager::setPath(QString path)
-{
-    qInfo()<<"Set plugins path"<<path;
-    _path = path;
-}
 
-bool PluginsManager::loadPlugins()
+
+bool PluginsManager::loadPlugins(QString path)
 {
     qInfo()<<"Load plugins";
 
     QDir dir(QDir::currentPath());
 
-    if (!dir.cd(_path))
+    if (!dir.cd(path))
     {
-        qWarning()<<"Plugins directory does not exist"<< _path;
+        qWarning()<<"Plugins directory does not exist"<< path;
         return false;
     }
 

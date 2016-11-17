@@ -22,10 +22,6 @@ void AppCore::appStart()
         qWarning()<< "Error load setitngs file.";
     }
 
-    if (!_pluginsManager->loadPlugins()) {
-        qInfo()<<"Plugins not loaded";
-    }
-
     if (!_server->startServer()) {
         qWarning()<<"Unable start server";
     }

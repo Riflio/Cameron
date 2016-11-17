@@ -29,9 +29,7 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
 
         QXmlStreamReader::TokenType token = xml.readNext();
 
-        if (token == QXmlStreamReader::StartDocument || token == QXmlStreamReader::EndDocument) {
-            continue;
-        }
+        if (token == QXmlStreamReader::StartDocument || token == QXmlStreamReader::EndDocument) continue;
 
         if (token == QXmlStreamReader::StartElement) {
 
@@ -48,17 +46,20 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
                             attributes.value("streamPort").toInt()
                 );
 
-            }
+            } else
 
             if (xml.name() == "server") {
                 QXmlStreamAttributes attributes = xml.attributes();
                 server->setSettings( attributes.value("host").toString(), attributes.value("port").toInt() );
+            } else
+
+            if (xml.name() == "plugins") {
+                QXmlStreamAttributes attributes = xml.attributes();
+                pluginsManager->loadPlugins(attributes.value("dir").toString());
             }
 
-             if (xml.name() == "plugins") {
-                QXmlStreamAttributes attributes = xml.attributes();
-                pluginsManager->setPath(attributes.value("dir").toString());
-             }
+            emit Events->doAction("loadingSettings", QVariantList()<< xml.name().toString() << Events->ARG(&xml));
+
         }
 
     }

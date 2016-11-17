@@ -13,12 +13,12 @@ class PluginsManager : public PluginEventsBase
     Q_OBJECT
 public:
     explicit PluginsManager(QObject *parent = 0);
-    bool loadPlugins();
+    bool loadPlugins(QString path);
 
 signals:
 
 public slots:
-    void setPath(QString path);
+
 
 private:
     QString _path;

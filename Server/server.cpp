@@ -25,7 +25,7 @@ void Server::setCams(ICameras * cameras)
  */
 bool Server::startServer()
 {
-    qInfo()<<"Start server";
+    qInfo()<<"Start server"<<this;
 
     _server = new QTcpServer(this);
 
@@ -36,7 +36,7 @@ bool Server::startServer()
         return false;
     }
 
-    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(this));
+    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
 
     qInfo()<<"Server started";
 
@@ -64,7 +64,7 @@ void Server::newClient()
 
 ICameras * Server::getCams()
 {
-    return dynamic_cast<ICameras*>(_cameras);
+    return _cameras;
 }
 
 Server::~Server()

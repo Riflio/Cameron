@@ -11,6 +11,11 @@ Cameras_Camera::Cameras_Camera(QObject *parent) : QObject(parent)
 
 }
 
+int Cameras_Camera::id()
+{
+    return _id;
+}
+
 int Cameras_Camera::status()
 {
     return _status;
@@ -80,7 +85,7 @@ bool Cameras_Camera::setup()
     RTSP_Channel * channel = _rtsp->getChannel(_channel);
 
     if (channel==NULL) {
-        qWarning()<<"Channel not found!";
+        qWarning()<<"Channel not found!"<<_channel;
         return false;
     }
 
