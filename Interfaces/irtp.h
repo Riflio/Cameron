@@ -3,7 +3,7 @@
 
 #include <QByteArray>
 
-typedef char BYTE;
+#include "irtp_packet.h"
 
 namespace NS_RSTP {
 
@@ -12,16 +12,9 @@ class IRTP
 public:
     virtual bool newPacket(QByteArray packet)=0;
 
-    virtual bool getPacket(long long & offset, QByteArray & packet)=0;
+    virtual bool getPacket(long long & offset, IRTP_Packet *& packet)=0;
+    virtual bool getPacketData(long long & offset, QByteArray & packetData)=0;
 
-    virtual int getPayloadStart()=0;
-    virtual int getPayloadLength()=0;
-
-    virtual bool hasPadding()=0;
-
-    virtual BYTE  getCC()=0;
-    virtual unsigned int getTimeStamp()=0;
-    virtual unsigned short getSequence()=0;
 };
 
 }
