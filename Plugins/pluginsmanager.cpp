@@ -26,7 +26,7 @@ bool PluginsManager::loadPlugins(QString path)
         return false;
     }
 
-    foreach (QString strFileName, dir.entryList(QDir::Files))
+    foreach (QString strFileName, dir.entryList(QStringList()<<"*.so", QDir::Files))
     {
         QPluginLoader loader(dir.absoluteFilePath(strFileName));
 
