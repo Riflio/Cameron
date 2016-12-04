@@ -6,12 +6,13 @@
 #include <QUdpSocket>
 #include <QApplication>
 
+#include "Assets/wthread.h"
 #include "Camera/cameras_camera.h"
 
 /**
  * @brief Запускаем камеру, берём фреймы и отсылает по указанным host и port
  */
-class Server_Client_Streamer : public QObject
+class Server_Client_Streamer : public WThread
 {
     Q_OBJECT
 public:
@@ -24,12 +25,11 @@ public:
 
     int id();
 
+    bool start();
+    bool stop();
+
 signals:
     void finished(int id);
-
-public slots:
-    bool start();
-    void stop();
 
 private:
     QUdpSocket * _socket;
@@ -38,11 +38,7 @@ private:
     int _port;
     int _id;
 
-    QThread * _thread;
     Cameras_Camera * _cam;
-
-
-    bool _started;
 
     long long int _buffOffset;
 };

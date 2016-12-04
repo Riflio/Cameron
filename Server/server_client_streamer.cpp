@@ -3,21 +3,9 @@
 #include <QDebug>
 
 Server_Client_Streamer::Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id, Cameras_Camera * cam)
-    : QObject(0),  _host(host), _port(port), _id(id), _thread(0), _cam(cam)
+    : WThread(parent), _host(host), _port(port), _id(id), _cam(cam)
 {
-
-    _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется
-    connect(_thread, &QThread::started, this, &Server_Client_Streamer::process); //-- при запуске потока сразу начинаем работу    
-    connect( this, &Server_Client_Streamer::finished, _thread, &QThread::quit ); //-- как только вся работа сделана или остановлена, останавливаем поток
-    connect(_thread, &QThread::finished, this, &QObject::deleteLater ); //-- как только поток закончен удаляемся
-    connect(this, &QObject::destroyed, _thread, &QThread::deleteLater ); //-- Как только удалились, удаляем сам поток
-
-    connect(parent, &QObject::destroyed, this, &Server_Client_Streamer::stop); //-- как только родитель удаляется, останавливаем поток
-
     _buffOffset = -1;
-    _started = false;
-
-    moveToThread(_thread);
 }
 
 
@@ -40,7 +28,7 @@ void Server_Client_Streamer::process()
 
         QByteArray frame;
 
-        if ( !streamer->getPacket(_buffOffset, frame) ) continue; //-- нет новых фреймов с камеры, курим бамбук
+        if ( !streamer->getPacketData(_buffOffset, frame) ) continue; //-- нет новых фреймов с камеры, курим бамбук
 
         _socket->writeDatagram(frame, _host, _port);
         _socket->waitForBytesWritten();
@@ -48,7 +36,6 @@ void Server_Client_Streamer::process()
          QApplication::processEvents(); //-- мы не жадничаем
     }
 
-    //--
     _socket->close();
     emit finished( id() );
 
@@ -71,8 +58,8 @@ bool Server_Client_Streamer::start()
     //-- запускаем камеру, если ещё не запущена
     if (!_cam->start()) return false;
 
-    //-- ждём, пока запустится
-    while ( !(_cam->status() & Cameras_Camera::S_STARTED) ) { QApplication::processEvents(); }
+    //-- ждём, пока приконнектится
+    while ( !(_cam->status() & Cameras_Camera::S_CONNECTED) ) { QApplication::processEvents(); }
 
     //-- подготавливаем камеру к вещанию
     if (!_cam->setup()) return false;
@@ -86,9 +73,7 @@ bool Server_Client_Streamer::start()
     //-- и ждём, пока начнётся
     while ( !(_cam->status() & Cameras_Camera::S_PLAYED) ) { QApplication::processEvents(); }
 
-    _started = true;
-
-    _thread->start();
+    WThread::start();
 
     return true;
 }
@@ -97,15 +82,13 @@ bool Server_Client_Streamer::start()
 /**
  * @brief Останавливаем камеру и останавливаем поток
  */
-void Server_Client_Streamer::stop()
+bool Server_Client_Streamer::stop()
 {    
     qInfo()<<"Streamer STOP";
-    if (!_started) {
-        this->deleteLater();
-    }
 
     _cam->stop();
-    _started = false;
+
+    return WThread::stop();
 }
 
 Server_Client_Streamer::~Server_Client_Streamer()
