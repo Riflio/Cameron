@@ -20,6 +20,7 @@ public:
 
 
     virtual bool setSettings(QString url ="", int id=-1, int channel=0, int streamPort=4041)=0;
+    virtual int id()=0;
     virtual QString url()=0;
     virtual int status()=0;
     virtual bool start()=0;
