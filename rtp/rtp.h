@@ -9,35 +9,26 @@
 #include "../Interfaces/irtp.h"
 #include "Assets/multiaccessbuffer.h"
 
+#include "rtp_packet.h"
+
 /**
  * @brief Базовый класс для принятого голого RTP пакета
  */
 
 namespace NS_RSTP {
 
+
 class RTP: public virtual IRTP, private MultiAccessBuffer<QByteArray>
 {
 public:
     explicit RTP();
 
-    const int RTP_HEADER_SIZE = 12;
-
     bool newPacket(QByteArray packet);
-
-    bool getPacket(long long & offset, QByteArray & packet);
-
-    int getPayloadStart();
-    int getPayloadLength();
-
-    bool hasPadding();
-
-    BYTE  getCC();
-    unsigned int getTimeStamp();
-    unsigned short getSequence();
+    bool getPacket(long long & offset, IRTP_Packet *& packet);
+    bool getPacketData(long long & offset, QByteArray & packet);
 
 private:   
-    QMutex _mutex;
-    QByteArray _curPacket; //-- текущий пакет для обработки
+    QMutex _mutex;    
 };
 
 }
