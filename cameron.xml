@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <cameron>
-
-	<plugins dir="plugins" />
-
-	<server host="192.168.2.100" port="2666" /> 
+		
+	<server host="192.168.2.100" port="2666" > 
 
 	<cameras>
 		<camera id="1"  url="rtsp://192.168.2.122:554?user=admin&amp;password=&amp;channel=1&amp;stream=0.sdp" channel="0" streamPort="4041"  />		
 	</cameras>
+
+	<plugins dir="plugins" >
+		<cameronStream>
+			<stream id="1" cameraID="1" />
+		</cameronStream>
+
+		<cameronRipFiles>
+			<ripFiles id="1" streamID="1" savePath="./videos" autoStar="false" />
+		</cameronRipFiles>
+
+		<motionDetect>
+			<detector id="1" ripID="1" sensitivity="12000" ripInterval="10000" reCheckInterval="5000" />
+		<motionDetect>
+
+
+	</plugins>
 
 </cameron>
