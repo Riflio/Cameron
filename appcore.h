@@ -14,6 +14,9 @@ class AppCore : public QObject
 public:
     explicit AppCore(QObject *parent = 0);
     ~AppCore();
+
+    static void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg);
+
 signals:
 
 public slots:
