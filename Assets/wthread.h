@@ -3,7 +3,8 @@
 
 #include <QObject>
 #include <QThread>
-
+#include <QApplication>
+#include <QDebug>
 #include "../Interfaces/ithread.h"
 
 class WThread: public QObject, public IThread
@@ -13,44 +14,45 @@ public:
 
     WThread(QObject * parent): QObject(0)
     {
+        _status = 0;
         _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется
-        connect(_thread, &QThread::started, this, &WThread::process); //-- при запуске потока сразу начинаем работу
-        connect(this, &WThread::forceStart, this, &WThread::process); //-- когда нужен принудительный запуск без запуска потока/либо когда уже в потоке, но вылетели из process()
-        connect( this, &WThread::finished, _thread, &QThread::quit ); //-- как только вся работа сделана или остановлена, останавливаем поток
-        connect(_thread, &QThread::finished, this, &QObject::deleteLater ); //-- как только поток закончен удаляемся
-        connect(this, &QObject::destroyed, _thread, &QThread::deleteLater ); //-- Как только удалились, удаляем сам поток
-        connect(parent, &QObject::destroyed, this, &WThread::stop); //-- как только родитель удаляется, останавливаем поток
-        moveToThread(_thread);
+        connect(_thread, &QThread::started, this, &WThread::process, Qt::DirectConnection ); //-- при запуске потока сразу начинаем работу
+        connect(_thread, &QThread::finished, this, &WThread::del, Qt::DirectConnection  ); //-- как только поток остановился, удаляемся
+        if (parent!=NULL) connect(parent, &QObject::destroyed, this, &WThread::del, Qt::DirectConnection ); //-- Как только удаляется родитель, удаляемся и мы
 
-        _started = false;
+        moveToThread(_thread);        
     }
+
+
+    enum WThreadStatus {
+        WT_STARTED=4,
+        WT_RUNNING=8,
+        WT_PAUSED=16,
+        WT_STOPED=32,
+        WT_FINISHED=64,
+        WT_DESTROYED=128
+    };
 
 
     virtual void process()=0;
 
-    virtual bool statys()
+    virtual int status()
     {
-        return _started;
+        return _status;
     }
 
     virtual bool start()
     {
-        if (_started) return true;
-
-        _started = true;
-
-        if (!_thread->isRunning()) {
+        if ( !(_status & WT_STARTED) &&  !_thread->isRunning()) {
             _thread->start();
-        } else {
-            emit forceStart();
+            _status |= WT_STARTED;
         }
 
-        return onStarted();
-    }
+        _status &= ~WT_PAUSED;
+        _status |= WT_RUNNING;
 
+        emit statusChanged();
 
-    virtual bool onStarted()
-    {
         return true;
     }
 
@@ -58,22 +60,68 @@ public:
 
     virtual bool stop()
     {
-        if (!_started) {
-            this->deleteLater();
+        qDebug()<<"";
+        if ( (_status&WT_STOPED) && !(_status&WT_RUNNING)) return false; //-- Если уже и так останавливаемся или не выполняется
+
+        _status &= ~WT_RUNNING;
+        _status |= WT_STOPED;
+
+        emit statusChanged();
+
+        if ( !(_status&WT_STARTED) ) { //-- Если не был запущен, значит сразу можно удалять
+            del();
         }
-        _started = false;
 
         return true;
     }
 
+    virtual bool pause()
+    {
+        if ( !(_status&WT_RUNNING) ) return false;
+
+        _status &= ~WT_RUNNING;
+        _status |= WT_PAUSED;
+
+        emit statusChanged();
+
+        return true;
+
+    }
+
+protected slots:
+    void del() {
+        qDebug()<<"";
+        if (_status&WT_RUNNING) { //-- Если мы запущены, сначала останавливаемся
+            stop();
+            return;
+        }
+
+        _status |= WT_DESTROYED;
+        emit statusChanged();
+
+        QApplication::processEvents();
+
+        _thread->deleteLater();
+        deleteLater();
+    }
+
+    void finish()
+    {
+        qDebug()<<"";
+        _status &= ~WT_RUNNING;
+        _status |= WT_FINISHED;
+        emit statusChanged();
+        emit finished();
+        _thread->quit();
+    }
 
 signals:
     void finished();
-    void forceStart();
+    void statusChanged();
 
 protected:
     QThread * _thread;
-    bool _started;
+    int _status;
 
 };
 
