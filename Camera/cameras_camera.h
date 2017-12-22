@@ -32,18 +32,22 @@ public:
     bool setup();
     bool play();
     bool stop();
+    bool go();
 
     ISDP::sMedia * getSDPMedia();
     IRTSP_Stream * getStreamer();
 
 signals:
+    void errored();
 
 public slots:
     void onCameraConnected();
     void onCameraDisconnected();
-    void onChannelDisconnected();
+    void onCameraErrored();
+
     void onSetuped(int);
     void onPlayed(int);
+    void onTeardowned(int);
 
 private:
     int _id;
