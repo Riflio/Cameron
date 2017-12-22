@@ -15,7 +15,7 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
     _settingsFile = new QFile("cameron.xml");
 
     if (!_settingsFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qFatal("Settings file not opened");
+        qWarning()<< "Settings file not opened";
         return false;
     }
 
@@ -56,6 +56,13 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
             if (xml.name() == "plugins") {
                 QXmlStreamAttributes attributes = xml.attributes();
                 pluginsManager->loadPlugins(attributes.value("dir").toString());
+            } else
+
+            if (xml.name() == "users")  continue;
+
+            if (xml.name() == "user")  {
+                QXmlStreamAttributes attributes = xml.attributes();
+                server->addAvaliableUser(attributes.value("login").toString(), attributes.value("pass").toString());
             }
 
             emit Events->doAction("loadingSettings", QVariantList()<< xml.name().toString() << Events->ARG(&xml));

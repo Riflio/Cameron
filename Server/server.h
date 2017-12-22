@@ -24,6 +24,8 @@ public:
     void setCams(ICameras * cameras);
     ICameras * getCams();
 
+    void addAvaliableUser(QString name, QString pass);
+
 signals:
 
 public slots:
@@ -31,6 +33,7 @@ public slots:
 
 private slots:
     void newClient();
+    void delClient(int clientID);
 
 private:
     QTcpServer * _server;
@@ -38,6 +41,10 @@ private:
     QHostAddress _host;
     int _port;
     ICameras * _cameras;
+
+    bool userHasAccess(Server_Client *);
+
+    QHash<QString, QString> _avaliableUsers;
 
     friend Server_Client;
 };

@@ -25,11 +25,12 @@ void Server::setCams(ICameras * cameras)
  */
 bool Server::startServer()
 {
-    qInfo()<<"Start server"<<this;
+    qInfo()<<"Start server"<<_host<<_port;
 
     _server = new QTcpServer(this);
 
-    connect(_server, &QTcpServer::newConnection, this, &Server::newClient  );
+    connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
+
 
     if (! _server->listen(_host, _port) ) {
         qWarning()<<_server->errorString();
@@ -44,22 +45,38 @@ bool Server::startServer()
 }
 
 /**
- * @brief Обрабатываем новое подключение
+ * @brief Обрабатываем новое подключение, содаём клиента
  */
 void Server::newClient()
 {
     qInfo()<<"New client";
 
-    QTcpSocket* clientSocket = _server->nextPendingConnection();
+    Server_Client * client = new Server_Client(this, _server->nextPendingConnection(), this);
 
-    Server_Client * client = new Server_Client(this, clientSocket, this);
+    emit Events->doAction("newClient", QVariantList()<<Events->ARG(client));
 
-     emit Events->doAction("newClient", QVariantList()<<Events->ARG(client));
-
-    connect(clientSocket, &QTcpSocket::readyRead, client, &Server_Client::request);
+    connect(client, &Server_Client::destroyed,  [this, client]() { delClient(client->clientID()); });
 
     _clients.insert(client->clientID(), client);
 
+}
+
+/**
+* @brief Клиент удалился, обрабатываем
+*/
+void Server::delClient(int clientID)
+{
+    qDebug()<<clientID;
+    _clients.remove(clientID);
+}
+
+/**
+* @brief Проверяем, имеет ли пользователь доступ к управлению
+* @return
+*/
+bool Server::userHasAccess(Server_Client * client)
+{
+    return true;
 }
 
 ICameras * Server::getCams()
@@ -67,7 +84,17 @@ ICameras * Server::getCams()
     return _cameras;
 }
 
+/**
+* @brief Добавляем возможного пользователя сервера
+* @param name
+* @param pass
+*/
+void Server::addAvaliableUser(QString name, QString pass)
+{
+    _avaliableUsers[name]=pass;
+}
+
 Server::~Server()
 {
-    qInfo()<<"Server deleted";
+    qDebug()<<"";
 }
