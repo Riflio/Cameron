@@ -30,8 +30,6 @@ void RTSP::cameraConnect(QHostAddress address, int port, QString params)
 
 void RTSP::cameraConnect(QString url)
 {
-
-
     _gateway = url;
     QUrl decodeURL = QUrl(url);
 
@@ -124,7 +122,8 @@ void RTSP::alive(int channel)
     SendParams params;
     params.insert( "Session", QString::number( _channels.at(channel)->session()) );
 
-    send(GET_PARAMETER, params);
+    int r = send(ALIVE, params);
+    reqHistories.insert(r, ReqHistory(ALIVE, channel));
 }
 
 /**
@@ -135,17 +134,20 @@ void RTSP::teardown(int channel)
 {
     qInfo()<<"RTSP teardown"<<channel;
 
+    emit toTeardown(channel);
+
     SendParams params;
     params.insert( "Session", QString::number( _channels.at(channel)->session()) );
     int r = send(TEARDOWN, params);
 
     reqHistories.insert(r, ReqHistory(TEARDOWN, channel));
+
 }
 
 /**
- * @brief Пришёл ответ на запрос от камеры
- *
- */
+* @brief Пришёл ответ на запрос от камеры
+*
+*/
 void RTSP::onSckConnectReadyRead()
 {
 
@@ -228,6 +230,10 @@ void RTSP::onSckConnectReadyRead()
 
             for (int i = 0; i < _sdp->medias.length(); ++i) {
                 RTSP_Channel * channel = new RTSP_Channel(this);
+
+                //-- Отлавливаем события
+                connect(channel, &RTSP_Channel::errored, this, &RTSP::errored);
+
                 channel->_sdpMedia = _sdp->medias.at(i);
                 _channels.append(channel);
             }
@@ -252,12 +258,16 @@ void RTSP::onSckConnectReadyRead()
             break;
         }
 
-        case GET_PARAMETER: {
-        }
-
         case TEARDOWN: {
             emit teardowned(historyReq.channel);
             break;
+        }
+
+        case GET_PARAMETER:
+        case ALIVE: {
+            RTSP_Channel * channel = getChannel(historyReq.channel);
+            channel->alived();
+            emit alived(channel->id());
         }
 
         case NONE: {
@@ -284,6 +294,7 @@ int RTSP::send(METHODS method, SendParams params)
         case PLAY: sMethod="PLAY"; break;
         case GET_PARAMETER: sMethod="GET_PARAMETER"; break;
         case TEARDOWN: sMethod="TEARDOWN"; break;
+        case ALIVE: sMethod="GET_PARAMETER"; break; //-- Не хотят некоторые камеры воспринимать ALIVE, а вот GET_PARAMETER проходит
         default: break;
     }
 
@@ -333,12 +344,13 @@ void RTSP::onSckConnectDisconnected()
 void RTSP::onSckConnectError(QAbstractSocket::SocketError)
 {
     qWarning()<<"Camera socket error: "<< _sckConnect->errorString();
+    emit errored();
 }
 
 
 RTSP::~RTSP()
 {
-    //TODO: предварительно завершить все вещания
+    qDebug()<<"";
     if (_sckConnect->isOpen()) {
         _sckConnect->close();
     }

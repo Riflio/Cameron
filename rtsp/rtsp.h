@@ -28,7 +28,8 @@ public:
         SETUP,
         PLAY,
         GET_PARAMETER,
-        TEARDOWN
+        TEARDOWN,
+        ALIVE
     };
 
 
@@ -40,9 +41,12 @@ public:
 signals:
     void connected(); //-- подключились к камере
     void disconnected(); //--  отключились
+    void errored(); //-- Возникла ошибка канала/потока и т.д.
     void setuped(int channel); //-- создали канал для передачи
-    void played(int channel); //-- начали передачу
+    void played(int channel); //-- начали передачу    
+    void toTeardown(int channel); //-- Заканчиваем передачу
     void teardowned(int channel); //-- закончили передачу
+    void alived(int channel); //-- Мы ещё живы и ведём передачу
 
 public slots:
 
