@@ -4,9 +4,9 @@
 
 #include <QObject>
 #include <QUdpSocket>
-#include <QThread>
-#include <QApplication>
+#include <QTimer>
 
+#include "../Assets/wthread.h"
 #include "../Interfaces/irtsp_stream.h"
 #include "../rtp/rtp.h"
 
@@ -17,7 +17,7 @@
 
 namespace NS_RSTP {
 
-class RTSP_Stream: public QObject, public RTP, public IRTSP_Stream
+class RTSP_Stream: public WThread, public RTP, public IRTSP_Stream
 {    
     Q_OBJECT
 public:
@@ -31,17 +31,17 @@ signals:
     void finished();
     void connected();
     void disconnected();
-    void error(QAbstractSocket::SocketError);
+    void errored();
 
-public slots:
-    bool start();
-    void stop();
+private slots:
+    void goError();
 
 private:
     int _port;
     QUdpSocket * _socket;
-    bool _started;
-    QThread * _thread;
+
+    QTimer * _processTimer;
+    void processLoop();
 };
 
 }

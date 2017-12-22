@@ -4,21 +4,9 @@
 namespace NS_RSTP {
 
 RTSP_Stream::RTSP_Stream(QObject * parent, int port):
-  QObject(0), RTP()
+  WThread(parent), RTP()
 {
-    _port = port;
-    _started = false;
-
-    _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется
-    connect(_thread, &QThread::started, this, &RTSP_Stream::process); //-- при запуске потока сразу начинаем работу
-    connect( this, &RTSP_Stream::finished, _thread, &QThread::quit ); //-- как только вся работа сделана или остановлена, останавливаем поток
-    connect(_thread, &QThread::finished, this, &QObject::deleteLater ); //-- как только поток закончен удаляемся
-    connect(this, &QObject::destroyed, _thread, &QThread::deleteLater ); //-- Как только удалились, удаляем сам поток
-
-    connect(parent, &QObject::destroyed, this, &RTSP_Stream::stop); //-- как только родитель удаляется, останавливаем поток
-
-    moveToThread(_thread);
-
+    _port = port;    
 }
 
 /**
@@ -29,61 +17,60 @@ void RTSP_Stream::process()
 {
     _socket = new QUdpSocket(this);
 
-
-    connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)) ); //-- почему-то новый способ не воспринимает О_о
     connect(_socket, &QUdpSocket::connected, this, &RTSP_Stream::connected);
     connect(_socket, &QUdpSocket::disconnected, this, &RTSP_Stream::disconnected);
 
-    if (!_socket->bind(_port)) { return; }
-
-    while (true) {
-
-        if (!_started) { break; }
-
-        if (_socket->hasPendingDatagrams()) {
-            QByteArray data;
-
-
-
-            data.resize(_socket->pendingDatagramSize());
-            _socket->readDatagram(data.data(), data.size() );
-
-            newPacket(data);
-        }
-
-        QApplication::processEvents(); //-- мы не жадные
-
+    if (!_socket->bind(_port)) { //-- По каким-то причинам не удалось создать подключение, генерируем ошибку
+         goError();
+         return;
     }
 
-    _socket->close();
-    emit finished();
+    _processTimer = new QTimer(this);
+    _processTimer->setInterval(1);
+    connect(_processTimer, &QTimer::timeout, this, &RTSP_Stream::processLoop);
+    _processTimer->start();
+
+
 
 }
 
 
-bool RTSP_Stream::start()
+/**
+* @brief Сообщаем о возникшей ошибке
+*/
+void RTSP_Stream::goError()
 {
-    if (!_started) {
-        _started = true;
-        _thread->start();
-    }
-
-    return true;
+    emit errored();
+    finished();
 }
 
-void RTSP_Stream::stop()
+/**
+* @brief Основной рабочий цикл потока
+*/
+void RTSP_Stream::processLoop()
 {
-    qInfo()<<"RTSP Stream stop";
-    if (!_started) {
-        this->deleteLater();
+    if (!(_status & WT_RUNNING)) {
+        _processTimer->stop();
+        finish();
+        return;
     }
 
-    _started = false;
+    if (_status & WT_PAUSED) return;
+
+    if (_socket->hasPendingDatagrams()) {
+        QByteArray data;
+
+        data.resize(_socket->pendingDatagramSize());
+        _socket->readDatagram(data.data(), data.size() );
+
+        newPacket(data);
+    }
 }
 
 RTSP_Stream::~RTSP_Stream()
 {
-    qInfo()<<"RTSP Stream deleted";
+    qDebug()<<"";
+    if (_socket->isOpen()) _socket->close();
 }
 
 
