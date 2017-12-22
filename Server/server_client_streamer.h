@@ -9,6 +9,8 @@
 #include "Assets/wthread.h"
 #include "Camera/cameras_camera.h"
 
+#include <QTimer>
+
 /**
  * @brief Запускаем камеру, берём фреймы и отсылает по указанным host и port
  */
@@ -16,31 +18,26 @@ class Server_Client_Streamer : public WThread
 {
     Q_OBJECT
 public:
-    explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  Cameras_Camera * cam);
+    explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  IRTSP_Stream * streamer);
     ~Server_Client_Streamer();
 
     void process();
 
-    Cameras_Camera * cam();
-
     int id();
 
-    bool start();
-    bool stop();
-
-signals:
-    void finished(int id);
 
 private:
-    QUdpSocket * _socket;
-
     QHostAddress _host;
     int _port;
     int _id;
 
-    Cameras_Camera * _cam;
+    IRTSP_Stream * _streamer;
+    QUdpSocket * _socket;
 
     long long int _buffOffset;
+
+    QTimer * _processTimer;
+    void  processLoop();
 };
 
 #endif // SERVER_CLIENT_STREAMER_H
