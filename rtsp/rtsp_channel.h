@@ -29,20 +29,22 @@ public:
 
     RTSP_Stream * getStreamer();
 
-
-
     friend class RTSP;
 
 signals:
     void connected();
     void disconnected();
+    void errored();
 
 public slots:
     void setup(int port);
     void play();
     void teardown();
     void alive();
+    void alived();
 
+private slots:
+    void onStreamError();
 
 private:
     RTSP * _connect;
@@ -51,7 +53,7 @@ private:
     SDP::sMedia * _sdpMedia;
     QTimer * _aliveTimer;
     RTSP_Stream * _streamer;
-
+    bool _alived;
 };
 }
 #endif // RTSP_CHANNEL_H

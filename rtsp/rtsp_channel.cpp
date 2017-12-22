@@ -10,9 +10,10 @@ RTSP_Channel::RTSP_Channel(RTSP * parent):
     _connect = parent;
     _id = _connect->channelsCount();
     _session = 0;
-
+    _streamer = NULL;
     _aliveTimer = new QTimer(this);
     _aliveTimer->setInterval(50000);
+    _alived = false;
 
     connect(_aliveTimer, SIGNAL(timeout()), this, SLOT(alive()) );
 }
@@ -23,16 +24,15 @@ RTSP_Channel::RTSP_Channel(RTSP * parent):
  */
 void RTSP_Channel::setup(int port)
 {
-    qInfo()<<"RTSP_Channel setup"<<port;
+    qInfo()<<"setup"<<port;
 
     //-- подготавливаем стример
     _streamer = new RTSP_Stream(this, port);
     connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
     connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
-
+    connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
 
     _connect->setup(id(), port);
-
 }
 
 /**
@@ -40,25 +40,59 @@ void RTSP_Channel::setup(int port)
  */
 void RTSP_Channel::play()
 {
-    qInfo()<<"RTSP_Channel play";
+    qInfo()<<"play";
+
+    if (_aliveTimer->isActive()) return; //-- Мы уже запущены
 
     _streamer->start();
-
+    _alived = true;
     _aliveTimer->start();
-
     _connect->play(id());
+
+
 }
 
-
+/**
+* @brief Отсылаем запрос, что мы ещё живы
+*/
 void RTSP_Channel::alive()
 {
-    qInfo()<<"RTSP_Channel alive";
+    qInfo()<<"alive";
+
+    //-- Если с момента предыдущего запроса не было подтверждения ответа, то значит, что умерли (сеть или хз)
+    if (!_alived) {
+        _aliveTimer->stop();
+        emit errored();
+        return;
+    }
+    _alived = false;
     _connect->alive(id());
 }
 
-void RTSP_Channel::teardown()
+/**
+* @brief Пришло подтверждение ответа на запрос о том, что мы живы
+*/
+void RTSP_Channel::alived()
 {
-    qInfo()<<"RTSP_Channel teardown";
+    _alived = true;
+}
+
+/**
+* @brief Возникла ошибка с принимающим потоком
+*/
+void RTSP_Channel::onStreamError()
+{
+    emit errored();
+    teardown();
+}
+
+/**
+* @brief Отсылаем запрос на завершение вещания
+*/
+void RTSP_Channel::teardown()
+{    
+    if (!_aliveTimer->isActive()) return; //-- Если мы не были запущены
+    qInfo()<<"teardown";
 
     _aliveTimer->stop();
     _connect->teardown(id());
@@ -88,7 +122,8 @@ RTSP_Stream * RTSP_Channel::getStreamer()
 
 RTSP_Channel::~RTSP_Channel()
 {
-    qInfo()<<"RTSP channel deleted";
+    teardown();
+    qDebug()<<"";
 }
 
 }
