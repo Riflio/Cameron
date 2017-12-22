@@ -27,6 +27,7 @@ public:
     virtual bool setup()=0;
     virtual bool play()=0;
     virtual bool stop()=0;
+    virtual bool go()=0;
     virtual ISDP::sMedia * getSDPMedia()=0;
     virtual NS_RSTP::IRTSP_Stream * getStreamer()=0;
 };

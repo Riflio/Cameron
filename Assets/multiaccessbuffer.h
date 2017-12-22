@@ -33,7 +33,7 @@ public:
     bool get(long long int & offset, BufType & data) {
         QMutexLocker locker(&_mutex);
 
-        if (_buffer.empty() || offset>_offset) return false; //-- либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
+        if (_buffer.empty() || offset>=_offset) return false; //-- либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
 
         //-- если буфер не заполнен, то за верхнюю границу принимаем то, на сколько заполнен, что бы не ждать заполнения
         int limit = (_offset<_max)? _offset : _max;
@@ -59,7 +59,7 @@ public:
 
     long long offset(long long int cur=0)  { return _offset - cur; }
 
-
+    int length() {  return _buffer.length(); }
 
 private:
     QList<BufType> _buffer;
