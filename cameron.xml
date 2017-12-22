@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <cameron>
 		
-	<server host="192.168.2.1" port="2666" >  <!--Connect url:rtsp://192.168.2.1/trackID=1?user=admin&pass=178900-->
+	<server host="127.0.0.1" port="2666" >  <!--Connect url:rtsp://127.0.0.1/trackID=1?user=admin&pass=178900-->
 
 	<users>
 		<user login="admin" pass="1c51e941db668be21f34d72f3eef0484"></user> <!--MD5:178900-->
