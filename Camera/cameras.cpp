@@ -31,7 +31,7 @@ ICameras_Camera * Cameras::getCam(int id)
 }
 
 /**
- * @brief Собираем SDP со всех камер, подменяем айдишником камеры паарметр управления
+ * @brief Собираем SDP со всех камер, подменяем айдишником камеры параметр управления
  * @return
  */
 ISDP * Cameras::getTotalSDP()
@@ -43,20 +43,19 @@ ISDP * Cameras::getTotalSDP()
     for (i = _cams.begin(); i != _cams.end(); ++i) {
         Cameras_Camera * cam = static_cast<Cameras_Camera*>( i.value() );
 
-        bool statusOK = true;
-        while ( !(cam->status()&Cameras_Camera::S_CONNECTED) ) //-- придётся ждать коннекта, иначе нам не получить SDP
+        while ( !(cam->status()&Cameras_Camera::S_CONNECTED) && !(cam->status()&Cameras_Camera::S_ERROR) ) //-- придётся ждать коннекта, иначе нам не получить SDP
         {
            if ( !(cam->status()&Cameras_Camera::S_STARTED)) { //-- если ещё не запустили, запускаем
-               if (!cam->start()) { statusOK=false; break; } //-- если не удастся подключиться, то пропускаем
+               if (!cam->start()) { break; }
            }
            QApplication::processEvents();
         }
 
-        if (!statusOK) continue;
+        if (!(cam->status()&Cameras_Camera::S_CONNECTED)) continue; //-- Не удалось подключиться, пропускаем
 
         SDP::sMedia * media = cam->getSDPMedia();
 
-        media->attribytes.value("control")->value=(QString("trackID=%1").arg( i.key() )); //-- подменим параметр управления на йдишник камеры, что бы в дальнейшем знать какой клиент к какой камере относиться
+        media->attribytes.value("control")->value=(QString("trackID=%1").arg( i.key() )); //-- подменим параметр управления на йдишник камеры, что бы в дальнейшем знать какой клиент к какой камере относится
 
         sdp->medias.append( media );
 
@@ -77,5 +76,5 @@ TCams Cameras::getCams()
 
 Cameras::~Cameras()
 {
-    qInfo()<<"Cameras deleted";
+    qDebug()<<"";
 }
