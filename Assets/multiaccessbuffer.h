@@ -20,7 +20,7 @@ public:
         QMutexLocker locker(&_mutex);
 
         if (_buffer.size()>=_max) {
-            _buffer.takeFirst();
+            _buffer.removeFirst();
         }
 
         _buffer.append(data);
@@ -40,6 +40,9 @@ public:
 
         if (offset==-1) { //-- не знают актуальной позиции, хотят начать сначала буфера
             offset = (_offset - limit ) + 1;
+        } else
+        if (offset==-2) { //-- Не знают актуальной позиции, хотят начать с текущего момента
+            offset = _offset;
         }
 
         int index =  limit - (_offset - offset)  - 1;
