@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <cameron>
 		
-	<server host="127.0.0.1" port="2666" >  <!--Connect url:rtsp://127.0.0.1/trackID=1?user=admin&pass=178900-->
+	<server host="127.0.0.1" port="2666" >  <!--Connect url: "rtsp://127.0.0.1:2666/trackID=1?user=admin&pass=178900" -->
 
 	<users>
 		<user login="admin" pass="1c51e941db668be21f34d72f3eef0484"></user> <!--MD5:178900-->
@@ -10,10 +10,11 @@
 	</users>		
 
 	<cameras>
-		<camera id="1"  url="rtsp://192.168.2.122:554?user=admin&amp;password=&amp;channel=1&amp;stream=0.sdp" channel="0" streamPort="4041"  />		
+		<camera id="1"  url="rtsp://192.168.2.122:554?user=admin&amp;password=&amp;channel=1&amp;stream=0.sdp" channel="0" streamPort="4041"  />	
 	</cameras>
 
-	<plugins dir="/home/pavelk/Projects/Cameron/Plugins2" >
+	<plugins dir="/home/pavelk/Projects/Cameron/Plugins2323232" >
+		
 		<cameronStream>
 			<stream id="1" cameraID="1" />
 		</cameronStream>
@@ -23,8 +24,8 @@
 		</cameronRipFiles>
 
 		<motionDetect>
-			<detector id="1" ripID="1" sensitivity="12000" ripInterval="10000" reCheckInterval="5000" />
-		<motionDetect>
+			<detector id="1" ripID="1" sensitivity="0" ripInterval="10000" reCheckInterval="5000" />
+		</motionDetect>
 
 
 	</plugins>
