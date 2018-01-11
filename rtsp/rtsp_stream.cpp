@@ -4,7 +4,7 @@
 namespace NS_RSTP {
 
 RTSP_Stream::RTSP_Stream(QObject * parent, int port):
-  WThread(parent), RTP()
+  WThread(parent, "RTSP stream"), RTP()
 {
     _port = port;    
 }
@@ -26,7 +26,7 @@ void RTSP_Stream::process()
     }
 
     _processTimer = new QTimer(this);
-    _processTimer->setInterval(1);
+    _processTimer->setInterval(3);
     connect(_processTimer, &QTimer::timeout, this, &RTSP_Stream::processLoop);
     _processTimer->start();
 
