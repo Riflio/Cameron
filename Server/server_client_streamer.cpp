@@ -3,7 +3,7 @@
 #include <QDebug>
 
 Server_Client_Streamer::Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id, IRTSP_Stream * streamer)
-    : WThread(parent), _host(host), _port(port), _id(id), _streamer(streamer)
+    : WThread(parent, "Client stream"), _host(host), _port(port), _id(id), _streamer(streamer)
 {
     _buffOffset = -1;
 }
@@ -19,7 +19,7 @@ void Server_Client_Streamer::process()
     qInfo()<<"";
 
     _processTimer = new QTimer(this);
-    _processTimer->setInterval(1);
+    _processTimer->setInterval(3);
 
     connect(_processTimer, &QTimer::timeout, this, &Server_Client_Streamer::processLoop);
 
@@ -45,6 +45,8 @@ void Server_Client_Streamer::processLoop()
     }
 
     QByteArray frame;
+
+    //qDebug()<<"ClientStreamer"<<_buffOffset<<_streamer->bufOffset();
 
     if ( !_streamer->getPacketData(_buffOffset, frame) ) return; //-- нет новых фреймов с камеры, курим бамбук
 
