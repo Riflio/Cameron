@@ -37,9 +37,9 @@ bool Server::startServer()
         return false;
     }
 
-    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
-
     qInfo()<<"Server started";
+
+    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
 
     return true;
 }

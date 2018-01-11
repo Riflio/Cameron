@@ -212,7 +212,7 @@ void Server_Client::answerDESCRIBE(int cseq)
     sdp->origin.creatorName="Cameron";
     sdp->origin.netType="IN";
     sdp->origin.host=_server->_host;
-    sdp->origin.sessionID=38990265062388;
+    sdp->origin.sessionID=38990265062388; //TODO: Выяснить, что сюда сувать
     sdp->origin.sessionVer=38990265062388;
 
 
