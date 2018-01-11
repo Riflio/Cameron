@@ -164,20 +164,20 @@ bool Cameras_Camera::go()
     //-- запускаем камеру, если ещё не запущена
     if (!start()) return false;
 
-    //-- ждём, пока приконнектится
-    while ( !(_status & S_CONNECTED) && !(_status & S_ERROR) ) { QApplication::processEvents(); }
+    //-- ждём, пока приконнектится //TODO: Заменить на QEventLoop
+    while ( !(_status & S_CONNECTED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
     //-- подготавливаем камеру к вещанию
     if (!setup()) return false;
 
     //-- ждём, пока поток камеры настраивается
-    while ( !(_status & S_SETUPED) && !(_status & S_ERROR) ) { QApplication::processEvents(); }
+    while ( !(_status & S_SETUPED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
     //-- запускаем вещание
     if (!play()) return false;
 
     //-- и ждём, пока начнётся
-    while ( !(_status & S_PLAYED) && !(_status & S_ERROR) ) { QApplication::processEvents(); }
+    while ( !(_status & S_PLAYED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
     return !(_status & S_ERROR);
 }

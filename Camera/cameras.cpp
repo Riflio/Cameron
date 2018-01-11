@@ -1,5 +1,4 @@
 #include "cameras.h"
-#include <QApplication>
 
 Cameras::Cameras(QObject *parent) : QObject(parent)
 {
@@ -48,7 +47,7 @@ ISDP * Cameras::getTotalSDP()
            if ( !(cam->status()&Cameras_Camera::S_STARTED)) { //-- если ещё не запустили, запускаем
                if (!cam->start()) { break; }
            }
-           QApplication::processEvents();
+           QCoreApplication::processEvents();
         }
 
         if (!(cam->status()&Cameras_Camera::S_CONNECTED)) continue; //-- Не удалось подключиться, пропускаем

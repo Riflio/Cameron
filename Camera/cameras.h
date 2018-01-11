@@ -4,7 +4,7 @@
 #include <QObject>
 #include "cameras_camera.h"
 #include "../Interfaces/icameras.h"
-
+#include <QCoreApplication>
 
 
 /**

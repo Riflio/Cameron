@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QThread>
 #include <QUdpSocket>
-#include <QApplication>
 
 #include "Assets/wthread.h"
 #include "Camera/cameras_camera.h"

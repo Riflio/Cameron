@@ -8,7 +8,6 @@
 #include "Camera/cameras.h"
 #include "Server/server_client_streamer.h"
 #include "server_client_info.h"
-#include <QApplication>
 
 /**
  * @brief Подключившийся клиент

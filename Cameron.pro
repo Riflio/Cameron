@@ -1,7 +1,6 @@
 TEMPLATE = app
 
-
-QT += qml quick network core gui widgets sql
+QT += network core sql
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -56,7 +55,8 @@ HEADERS += \
     rtp/rtp_packet.h \
     Interfaces/irtp_packet.h \
     Assets/wthread.h \
-    Server/server_client_info.h
+    Server/server_client_info.h \
+    Interfaces/ithread.h
 
 DEFINES += QT_MESSAGELOGCONTEXT
 
