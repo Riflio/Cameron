@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include <QThread>
-#include <QApplication>
 #include <QDebug>
+#include <QCoreApplication>
+
 #include "../Interfaces/ithread.h"
 
 class WThread: public QObject, public IThread
@@ -12,10 +13,11 @@ class WThread: public QObject, public IThread
     Q_OBJECT
 public:
 
-    WThread(QObject * parent): QObject(0)
+    WThread(QObject * parent, QString name=""): QObject(0)
     {
         _status = 0;
         _thread = new QThread(0); //-- поток не должен иметь родителя, что бы он не снёс его ненароком, пока выполняется
+        _thread->setObjectName(name);
         connect(_thread, &QThread::started, this, &WThread::process, Qt::DirectConnection ); //-- при запуске потока сразу начинаем работу
         connect(_thread, &QThread::finished, this, &WThread::del, Qt::DirectConnection  ); //-- как только поток остановился, удаляемся
         if (parent!=NULL) connect(parent, &QObject::destroyed, this, &WThread::del, Qt::DirectConnection ); //-- Как только удаляется родитель, удаляемся и мы
@@ -99,7 +101,7 @@ protected slots:
         _status |= WT_DESTROYED;
         emit statusChanged();
 
-        QApplication::processEvents();
+        QCoreApplication::processEvents();
 
         _thread->deleteLater();
         deleteLater();
