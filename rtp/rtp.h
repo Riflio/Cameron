@@ -26,6 +26,7 @@ public:
     bool newPacket(QByteArray packet);
     bool getPacket(long long & offset, IRTP_Packet *& packet);
     bool getPacketData(long long & offset, QByteArray & packet);
+    long long int bufOffset();
 
 private:   
     QMutex _mutex;    

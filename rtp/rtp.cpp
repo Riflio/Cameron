@@ -3,7 +3,7 @@
 namespace NS_RSTP {
 
 RTP::RTP():
-   MultiAccessBuffer(5000), _mutex()
+   MultiAccessBuffer(500), _mutex()
 {
 
 }
@@ -33,6 +33,11 @@ bool RTP::getPacketData(long long & offset, QByteArray & packet)
     if ( !get(offset, packet) ) return false;
 
     return true;
+}
+
+long long int RTP::bufOffset()
+{
+    return offset(0);
 }
 
 /**
