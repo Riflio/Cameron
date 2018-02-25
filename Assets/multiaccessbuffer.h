@@ -33,7 +33,7 @@ public:
     bool get(long long int & offset, BufType & data) {
         QMutexLocker locker(&_mutex);
 
-        if (_buffer.empty() || offset>=_offset) return false; //-- либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
+        if (_buffer.empty() || offset>_offset) return false; //-- либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
 
         //-- если буфер не заполнен, то за верхнюю границу принимаем то, на сколько заполнен, что бы не ждать заполнения
         int limit = (_offset<_max)? _offset : _max;
@@ -41,8 +41,8 @@ public:
         if (offset==-1) { //-- не знают актуальной позиции, хотят начать сначала буфера
             offset = (_offset - limit ) + 1;
         } else
-        if (offset==-2) { //-- Не знают актуальной позиции, хотят начать с текущего момента
-            offset = _offset;
+        if (offset<-1) { //-- Не знают актуальной позиции, хотят начать с текущего момента за вычетом указанного количества
+            offset = qMax((long long int)0, _offset + offset + 1);
         }
 
         int index =  limit - (_offset - offset)  - 1;
