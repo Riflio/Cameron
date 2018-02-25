@@ -170,7 +170,7 @@ bool SDP::make(QByteArray & data)
 
 SDP::~SDP()
 {
-    //TODO: доделать бы освобождение памяти :P
+    qDeleteAll(medias);
 }
 
 

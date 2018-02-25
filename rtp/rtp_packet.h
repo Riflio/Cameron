@@ -8,8 +8,8 @@
 class RTP_packet: public IRTP_Packet
 {
 public:
-    RTP_packet(const QByteArray & packetData );
-
+    RTP_packet();
+    virtual ~RTP_packet() {}
 
     int getPayloadStart();
     int getPayloadLength();
@@ -21,10 +21,10 @@ public:
     unsigned short getSequence();
     const int RTP_HEADER_SIZE = 12;
 
-    QByteArray data();
+    QByteArray & data();
 
 private:
-    QByteArray _packet;
+    QByteArray _data;
 };
 
 #endif // RTP_PACKET_H

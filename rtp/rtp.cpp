@@ -47,13 +47,18 @@ long long int RTP::bufOffset()
  * @return
  */
 bool RTP::getPacket(long long & offset, IRTP_Packet *& packet)
-{
-    QByteArray data;
+{    
 
-    if ( !get(offset, data) ) return false;
+    RTP_packet * p = new RTP_packet();
 
-    packet = new RTP_packet(data);
+    if ( !get(offset, p->data() ) ) {
+        delete p;
+        p = NULL;
+        packet = NULL;
+        return false;
+    }
 
+    packet = p;
     return true;
 }
 

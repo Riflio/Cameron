@@ -8,6 +8,8 @@
 class ISDP
 {
 public:
+    virtual ~ISDP() {}
+
     virtual bool parse(QByteArray data)=0;
     virtual bool make(QByteArray & data)=0;
 
@@ -48,7 +50,10 @@ public:
     };
 
     class sMedia {
-        public:
+    public:
+        ~sMedia() {
+            qDeleteAll(attribytes);
+        }
         mediaTypes type; //-- тип
         int port; //-- порт
         QString profile; //-- профиль
