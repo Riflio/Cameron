@@ -2,11 +2,11 @@
 #include <QDateTime>
 #include <QDebug>
 
-
 AppCore::AppCore(QObject *parent) : QObject(parent)
 {
 
 }
+
 
 
 void AppCore::appStart()
@@ -22,13 +22,17 @@ void AppCore::appStart()
 
     _server->setCams(_cameras);
 
-    if (!_settings->load(_cameras, _server, _pluginsManager)) {
+    if ( !_settings->load(_cameras, _server, _pluginsManager) ) {
         qWarning()<< "Error load setitngs file.";
+        return;
     }
 
-    if (!_server->startServer()) {
+    if ( !_server->startServer() ) {
         qWarning()<<"Unable start server";
+        return;
     }
+
+    qInfo()<<QString("For connect use 'rtsp://admin:pass@%1:%2/track/1'").arg(_server->host().toString()).arg(_server->port());
 
 }
 

@@ -4,9 +4,15 @@
 #include <QObject>
 #include <QDir>
 #include <QPluginLoader>
+
+#include "Plugins/defines.h"
+
 #include "Plugins/PluginInterface.h"
 #include "Plugins/PluginEventsWrapper.h"
 #include "Plugins/eventer.h"
+
+#include "Plugins/wthread.h"
+
 
 class PluginsManager : public PluginEventsBase
 {
@@ -19,10 +25,12 @@ signals:
 
 public slots:
 
+private slots:
+    void getWThreadClass(WThread * wthread);
 
 private:
-    QString _path;
     Eventer * _eventer;
+    QString _path;
 };
 
 #endif // PLUGINSMANAGER_H

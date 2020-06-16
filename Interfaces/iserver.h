@@ -6,8 +6,8 @@
 class IServer
 {
 public:
-    virtual void setCams(ICameras * cameras)=0;
-    virtual ICameras * getCams()=0;
+    virtual void setCams(ICameras * cameras) =0;
+    virtual ICameras * getCams() =0;
 
 };
 

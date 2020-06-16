@@ -5,14 +5,14 @@
 #include <QThread>
 #include <QUdpSocket>
 
-#include "Assets/wthread.h"
+#include "Plugins/wthread.h"
 #include "Camera/cameras_camera.h"
 
 #include <QTimer>
 
 /**
- * @brief Запускаем камеру, берём фреймы и отсылает по указанным host и port
- */
+* @brief Отсылаем клиенту сервера фреймы
+*/
 class Server_Client_Streamer : public WThread
 {
     Q_OBJECT
@@ -20,7 +20,8 @@ public:
     explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  IRTSP_Stream * streamer);
     ~Server_Client_Streamer();
 
-    void process();
+    void loop() override;
+    bool onStarted() override;
 
     int id();
 
@@ -35,8 +36,6 @@ private:
 
     long long int _buffOffset;
 
-    QTimer * _processTimer;
-    void  processLoop();
 };
 
 #endif // SERVER_CLIENT_STREAMER_H

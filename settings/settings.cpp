@@ -14,18 +14,18 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
 
     _settingsFile = new QFile("cameron.xml");
 
-    if (!_settingsFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning()<< "Settings file not opened";
+    if ( !_settingsFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
+        qWarning()<< "Settings file not opened!";
         return false;
     }
 
     QXmlStreamReader xml(_settingsFile);
 
-    if (xml.hasError()) return false;
+    if ( xml.hasError() ) return false;
 
     while ( !xml.atEnd()  ) {
 
-        if (xml.hasError()) return false;
+        if ( xml.hasError() ) return false;
 
         QXmlStreamReader::TokenType token = xml.readNext();
 
@@ -33,11 +33,11 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
 
         if (token == QXmlStreamReader::StartElement) {
 
-            if (xml.name() == "cameras")  continue;
+            if ( xml.name()=="cameras" )  continue;
 
-            if (xml.name() == "camera") {
+            if ( xml.name()=="camera" ) {
                 QXmlStreamAttributes attributes = xml.attributes();
-                if (! attributes.hasAttribute("id") || ! attributes.hasAttribute("url") ) return false;
+                if ( !attributes.hasAttribute("id") || !attributes.hasAttribute("url") ) return false;
 
                 cameras->newCam(attributes.value("id").toInt())->setSettings(
                             attributes.value("url").toString(),
@@ -48,24 +48,26 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
 
             } else
 
-            if (xml.name() == "server") {
+            if ( xml.name()=="server" ) {
                 QXmlStreamAttributes attributes = xml.attributes();
                 server->setSettings( attributes.value("host").toString(), attributes.value("port").toInt() );
             } else
 
-            if (xml.name() == "plugins") {
+            if ( xml.name()=="plugins" ) {
                 QXmlStreamAttributes attributes = xml.attributes();
                 pluginsManager->loadPlugins(attributes.value("dir").toString());
             } else
 
-            if (xml.name() == "users")  continue;
+            if ( xml.name()=="users" ) {
+                continue;
+            } else
 
-            if (xml.name() == "user")  {
+            if ( xml.name()=="user" )  {
                 QXmlStreamAttributes attributes = xml.attributes();
                 server->addAvaliableUser(attributes.value("login").toString(), attributes.value("pass").toString());
             }
 
-            emit Events->doAction("loadingSettings", QVariantList()<< xml.name().toString() << Events->ARG(&xml));
+            emit Events->doAction("LoadingSettings", QVariantList()<< xml.name().toString() << Events->ARG(&xml));
 
         }
 

@@ -12,7 +12,7 @@ class AppCore : public QObject
 {
     Q_OBJECT
 public:
-    explicit AppCore(QObject *parent = 0);
+    explicit AppCore(QObject *parent = nullptr);
     ~AppCore();
 
     static void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg);
@@ -22,12 +22,12 @@ signals:
 public slots:
     void appStart();
 
-
 private:
     Settings * _settings;
     Server * _server;
     Cameras * _cameras;
     PluginsManager * _pluginsManager;
+
 };
 
 #endif // APPCORE_H

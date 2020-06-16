@@ -61,13 +61,13 @@ void Server_Client::request()
 
     if ( rxInit.indexIn(initLine) == -1 ) { //-- пришла какая-то фигня, пропускаем
         qWarning()<<"Unable understand request!";
-        answer(false);
+        answer(400);
         return;
     }
 
     if ( rxInit.cap(3)!="RTSP/1.0") {
         qWarning()<<"Wrong RTSP version O_o, check request!";
-        answer(false);
+        answer(400);
         return;
     }
 
@@ -76,7 +76,7 @@ void Server_Client::request()
 
     if (! reqSource.isValid() ) {
         qWarning()<<"Request source URL invalid!";
-        answer(false);
+        answer(404);
         return;
     }
 
@@ -95,67 +95,62 @@ void Server_Client::request()
     int cseq = dataParams.value("CSeq", "-1").toInt();
     if (cseq==-1) {
         qWarning()<<"Not set CSeq O_o, check request!";
-        answer(false);
+        answer(400);
         return;
     }
 
 
     //-- Обрабатываем запрос
+
     if (command=="OPTIONS") {
-
-        //-- Проверим имя пользователя и пароль
-        QUrlQuery urlQuery(reqSource);
-
-        QString uName = urlQuery.queryItemValue("user");
-        QString uPass = urlQuery.queryItemValue("pass");
-
-        if (uName=="" || uPass=="") {
-            qWarning()<<"User name or password not set!";
-            answer(false);
-            return;
-        }
-
-        //-- Если инфы о пользователе ещё нет, то самое время узнать её
-        if ( !isActual() ) {
-            if ( !setInfo(uName, _server->_avaliableUsers.value(uName, "")) ) {
-                qWarning()<<"User name not found on avalialbe users!";
-                answer(false);
-                return;
-            }
-        }
-
-        if (!checkInfo(uName, uPass)) {
-            qWarning()<<"User name or password mismatch!";
-            answer(false);
-            return;
-        }
-
         answerOPTIONS(cseq);
         return;
     }
 
-    if ( !isActual() ) return answer(false); //-- Дальше, если пользователь не авторизован не продолжаем
+    //-- Проврим, залогинен ли пользователь, т.к. дальше без авторизации низя
+    if ( !isActual() ) {
 
-    if (command=="DESCRIBE") {
+        if ( dataParams.contains("Authorization") ) { //-- Если в заголовках есть "Authorization:", значит нужно распарсить по нему
+            QStringList authData = QString(QByteArray::fromBase64(dataParams.value("Authorization").mid(6, -1).toUtf8())).split(':');
+            if ( authData.count()!=2 ) {
+                qWarning()<<"Wrong auth data syntax!";
+                answer(401, cseq);
+                return;
+            }
+
+            if ( !loginUser(authData[0], authData[1]) ) {
+                answer(401, cseq);
+                return;
+            }
+
+        } else { //-- Иначе попробуем взять из URL
+            if ( !loginUser(reqSource.userName(), reqSource.password()) ) {
+                answer(401, cseq);
+                return;
+            }
+        }
+    }
+
+    if ( command=="DESCRIBE" ) {
         answerDESCRIBE(cseq);
         return;
     }
 
-    if (command=="SETUP") {
+    if ( command=="SETUP" ) {
 
         QString transport = dataParams.value("Transport");
         QRegExp rxClientPorts("client_port=([\\d]*)-([\\d]*)");
 
-        if (rxClientPorts.indexIn(transport)==-1) {
+        if ( rxClientPorts.indexIn(transport)==-1 ) {
             qWarning()<<"No set client_port";
-            answer(false);
+            answer(400, cseq);
             return;
         }
 
-        QRegExp rxCamID("trackID=([\\d]*)");
-        if (rxCamID.indexIn(reqSource.path())==-1) {
-            qWarning()<<"Not set trackID!"<<reqSource.path();
-            answer(false);
+        QRegExp rxCamID("/track/([\\d]*)");
+        if ( rxCamID.indexIn(reqSource.path())==-1 ) {
+            qWarning()<<"Not set track number! Check request!";
+            answer(404, cseq);
             return;
         }
 
@@ -165,22 +160,22 @@ void Server_Client::request()
         return;
     }
 
-     if (command=="PLAY") {
+     if ( command=="PLAY" ) {
         answerPLAY( cseq, dataParams.value("Session", "-1").toInt() );
         return;
      }
 
-     if (command == "TEARDOWN") {
+     if ( command=="TEARDOWN" ) {
          answerTEARDOWN(cseq, dataParams.value("Session", "-1").toInt() );
          return;
      }
 
-     if (command=="ALIVE") {
+     if ( command=="ALIVE" ) {
          answerAlive(cseq);
          return;
      }
 
-     if (command == "GET_PARAMETER") {
+     if ( command=="GET_PARAMETER" ) {
          answerGETPARAMETER(cseq);
          return;
      }
@@ -198,7 +193,7 @@ void Server_Client::answerOPTIONS(int cseq)
     QByteArray data;
     data.append("Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
 
-    answer(true, cseq, data);
+    answer(200, cseq, data);
 }
 
 /**
@@ -218,20 +213,20 @@ void Server_Client::answerDESCRIBE(int cseq)
 
 
     QByteArray sdpData;
-    if (!sdp->make(sdpData)) { //TODO: кэшировать
+    if ( !sdp->make(sdpData) ) { //TODO: кэшировать
         qWarning()<<"SDP not maked!";
-        answer(false);
+        answer(500, cseq);
         return;
     }
 
     int sdpSize = sdpData.size();
 
-    sdpData.prepend( "\r\n" );
-    sdpData.prepend( QString("Content-Length: %1\r\n").arg( sdpSize ).toUtf8() );
-    sdpData.prepend( "Content-Type: application/sdp\r\n" ); //-- В каком формате мы отдаём инфу, у нас sdp
-    sdpData.prepend( QString("Content-Base: rtsp://%1:%2\r\n").arg(_server->_host.toString()).arg(_server->_port).toUtf8() ); //-- Относительно этого адреса будут последующие запросы
+    sdpData.prepend("\r\n");
+    sdpData.prepend(QString("Content-Length: %1\r\n").arg( sdpSize ).toUtf8());
+    sdpData.prepend("Content-Type: application/sdp\r\n");
+    sdpData.prepend(QString("Content-Base: rtsp://%1:%2\r\n").arg(_server->_host.toString()).arg(_server->_port).toUtf8()); //-- Относительно этого адреса будут последующие запросы
 
-    answer(true, cseq, sdpData, false);
+    answer(200, cseq, sdpData, false);
 }
 
 /**
@@ -244,7 +239,7 @@ void Server_Client::answerPLAY(int cseq, int streamID)
 
     if ( streamID>_streamers.length() || streamID<0 ) {
         qWarning()<<"Streamer not found O_o";
-        answer(false);
+        answer(404, cseq);
         return;
     }
 
@@ -252,13 +247,13 @@ void Server_Client::answerPLAY(int cseq, int streamID)
 
     if ( streamer==NULL ) {
         qWarning()<<"Streamer was deleted O_O";
-        answer(false);
+        answer(500, cseq);
         return;
     }
 
-    if (!streamer->start()) {
+    if ( !streamer->start() ) {
         qWarning()<<"Streamer not started!";
-        answer(false);
+        answer(500, cseq);
         return;
     }
 
@@ -267,7 +262,7 @@ void Server_Client::answerPLAY(int cseq, int streamID)
     data.append(QString("Session: %1").arg(streamer->id()).append("\r\n"));
     data.append(QString("Range: npt=0.000-").append("\r\n"));
 
-    answer(true, cseq, data);
+    answer(200, cseq, data);
 
 }
 
@@ -279,24 +274,24 @@ void Server_Client::answerTEARDOWN(int cseq, int streamID)
 {
     qDebug()<<"Answer TEARDOWN";
 
-    if (streamID<0 || streamID > _streamers.length()) {
+    if ( (streamID<0) || (streamID>_streamers.length()) ) {
         qWarning()<<"Stream not found O_o";
-        answer(false);
+        answer(404, cseq);
         return;
     }
 
     Server_Client_Streamer * streamer = _streamers.at(streamID);
 
-    if (streamer==NULL) {
+    if ( streamer==nullptr ) {
         qWarning()<<"Stream deleted O_O";
-        answer(false);
+        answer(500, cseq);
         return;
     }
 
     streamer->stop();
 
     QByteArray data;
-    answer(true, cseq, data);
+    answer(200, cseq, data);
 }
 
 /**
@@ -309,31 +304,32 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, int camI
 
     Cameras_Camera * camera = static_cast<Cameras_Camera*>( _server->_cameras->getCam(camID) );
 
-    if (camera == NULL ){
+    if ( camera==nullptr ){
         qWarning()<<"Camera not found O_o";
-        answer(false);
+        answer(404, cseq);
         return;
     }
 
-    if (!camera->go()) {
+    if ( !camera->go() ) {
         qWarning()<<"Unable start camera";
-        answer(false);
+        answer(500, cseq);
         return;
     }
 
     Server_Client_Streamer * clientStreamer = new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, _streamers.length(), camera->getStreamer() );
 
     connect(camera, &Cameras_Camera::errored, this, &Server_Client::onCameraErrored); //-- Если будут ошибки с камерой, нужно отреагировать
-    connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только клиент удалиться - останавливаем вещаение камеры
+
+    connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только клиент удалиться - останавливаем вещание камеры
 
     _streamers.append(clientStreamer);
 
     QByteArray data;
 
     data.append(QString("Transport: RTP/AVP;unicast;destination=%1;source=%2;client_port=%3-%4").arg(_socket->peerAddress().toString()).arg(_server->_host.toString()).arg(videoPort).arg(audioPort).append("\r\n") );
-    data.append(QString("Session: %1").arg(clientStreamer->id()).append("\r\n")); //-- в сессию поставим айдишник, что бы знать в дальнейшем каким потоком управляет клиент
+    data.append(QString("Session: %1").arg(clientStreamer->id()).append("\r\n")); //-- В сессию поставим айдишник, что бы знать в дальнейшем каким потоком управляет клиент
 
-    answer(true, cseq, data);
+    answer(200, cseq, data);
 }
 
 
@@ -344,7 +340,7 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, int camI
 void Server_Client::answerGETPARAMETER(int cseq)
 {
     qInfo()<<"GET_PARAMETER";
-    answerAlive(cseq); //-- Некоторые используют получение параметра как ALIVE запрос...
+    answerAlive(cseq); //-- Некоторые плееры используют получение параметра как ALIVE запрос...
 }
 
 
@@ -355,7 +351,7 @@ void Server_Client::answerGETPARAMETER(int cseq)
 void Server_Client::streamFinished(int streamID)
 {
     qDebug()<<"";
-    _streamers.takeAt(streamID); //-- удаляем из стримеров
+    _streamers.takeAt(streamID);
 }
 
 /**
@@ -365,31 +361,42 @@ void Server_Client::streamFinished(int streamID)
 void Server_Client::answerAlive(int cseq)
 {
     qInfo()<<"ALIVE";
-    _aliveTimeOverTimer->start(); //-- Запускаем заново таймер
+    _aliveTimeOverTimer->start();
     QByteArray data;
-    answer(true, cseq, data);
+    answer(200, cseq, data);
 }
 
 
 /**
  * @brief Отсылаем ответ клиенту
+ * @param statusCode - статус
  * @param cseq - номер запроса
  * @param data - сам ответ
  * @param lastRN - нужно ли отправлять финальные \r\n
  */
-void Server_Client::answer(bool status, int cseq, QByteArray data, bool lastRN)
+void Server_Client::answer(int statusCode, int cseq, QByteArray data, bool lastRN)
 {
-    if (status) {
+    if ( statusCode==200 | statusCode==1 ) {
         data.prepend(QString("Server: Cameron\r\n").toUtf8());
         data.prepend(QString("CSeq: %1\r\n").arg(cseq).toUtf8());
         data.prepend("RTSP/1.0 200 OK\r\n");
     } else {
         data.clear();
-        data.append("RTSP/1.0 400 Bad Request\r\n");
+        switch ( statusCode ) {
+            case 401: data.append("RTSP/1.0 401 Unauthorized\r\n"); break;
+            case 400: data.append("RTSP/1.0 400 Bad Request\r\n"); break;
+            case 404: data.append("RTSP/1.0 404 Not Found\r\n"); break;
+            case 500: data.append("RTSP/1.0 500 Internal Server Error\r\n"); break;
+
+            default: data.append("RTSP/1.0 400 Bad Request\r\n"); break;
+        }
+
         data.append(QString("Server: Cameron\r\n").toUtf8());
+        data.append(QString("CSeq: %1\r\n").arg(cseq).toUtf8());
+        if ( statusCode==401 ) data.append(QString("WWW-Authenticate: Basic realm=\"Cameron\"\r\n"));
     }
 
-    if (lastRN) { data.append("\r\n"); }
+    if ( lastRN ) { data.append("\r\n"); }
 
     qInfo()<<"Answer to request "<<data;
 
@@ -397,20 +404,36 @@ void Server_Client::answer(bool status, int cseq, QByteArray data, bool lastRN)
 }
 
 /**
-* @brief Таймер закончил отсчёт, клиент не прислал подтверждение, что он живой, значит помер, удаляемся.
+* @brief Таймер закончил отсчёт, клиент не прислал подтверждение, что он живой.
 */
 void Server_Client::aliveTimeOver()
 {
     qInfo()<<"";
-    deleteLater();
+    emit notAlive(_id);
 }
 
+/**
+* @brief Попробуем залогинить пользователя
+* @param uName
+* @param uPass
+* @return
+*/
+bool Server_Client::loginUser(QString uName, QString uPass)
+{
+    if ( isActual() ) { return true; }
 
+    if ( (uName=="") || (uPass=="") ) { qWarning()<<"User name or password not set!"; return false; }
+
+    QString uPassHash = _server->_avaliableUsers.value(uName, "");
+
+    if ( !checkPass(uPass,uPassHash) ) { qWarning()<<"User name or password mismatch!"; return false; }
+
+    if ( !setInfo(uName,uPassHash) ) { qWarning()<<"Unable login user!"; return false; }
+
+    return true;
+}
 
 Server_Client::~Server_Client()
 {
-
-    qDebug()<<"";
-
 }
 

@@ -16,7 +16,7 @@ public:
 
 signals:
     void doAction(QString, QVariantList);
-    void addAction(QString, QObject *, const char *);
+    void addAction(QString, QObject *, const char *, Qt::ConnectionType connType = Qt::AutoConnection);
 };
 
 
@@ -26,14 +26,13 @@ class PluginEvents : public PluginEventsBase
     Q_OBJECT
 
 public:
-    PluginEvents(QObject * parent =0): PluginEventsBase(parent) {
-        qDebug()<<"Plugin Events constructor";
+    PluginEvents(QObject * parent =nullptr): PluginEventsBase(parent) {
         _sInst = this;
-        connect(this, SIGNAL(doAction(QString, QVariantList)), parent, SIGNAL(doAction(QString, QVariantList)));
-        connect(this, SIGNAL(addAction(QString, QObject *, const char *)), parent, SIGNAL(addAction(QString, QObject *, const char *)) );
+        connect(this, SIGNAL(doAction(QString, QVariantList)), parent, SIGNAL(doAction(QString, QVariantList)), Qt::DirectConnection);
+        connect(this, SIGNAL(addAction(QString, QObject *, const char *, Qt::ConnectionType)), parent, SIGNAL(addAction(QString, QObject *, const char *, Qt::ConnectionType)), Qt::DirectConnection);
     }
 
-    QVariant ARG(void * p) { return qVariantFromValue((void *)p); }
+    static inline QVariant ARG(void * p) { return QVariant::fromValue((void *)p); }
 
     static PluginEvents * Instance() {
         if(!_sInst) {
@@ -51,4 +50,3 @@ private:
 
 
 #endif // PLUGINEVENTSWRAPPER_H
-

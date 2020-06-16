@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "cameras_camera.h"
-#include "../Interfaces/icameras.h"
+#include "Interfaces/icameras.h"
 #include <QCoreApplication>
 
 
@@ -20,8 +20,6 @@ public:
     ICameras_Camera * getCam(int id);
 
     TCams getCams();
-
-
     ISDP * getTotalSDP();
 
 signals:
@@ -30,6 +28,7 @@ public slots:
 
 private:
     TCams _cams;
+
 };
 
 #endif // CAMERAS_H

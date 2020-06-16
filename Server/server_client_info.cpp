@@ -1,7 +1,7 @@
 #include "server_client_info.h"
 
 Server_Client_Info::Server_Client_Info(QObject *parent) :
-    QObject(parent), _name(""), _pass(""), _actual(false)
+    QObject(parent), _name(""), _passHash(""), _actual(false)
 {
 
 }
@@ -25,22 +25,26 @@ bool Server_Client_Info::isActual()
 * @param name
 * @param pass
 */
-bool Server_Client_Info::setInfo(QString name, QString pass)
+bool Server_Client_Info::setInfo(QString name, QString passHash)
 {
-    if (name=="" || pass=="")  return false;
+    if (name=="" || passHash=="")  return false;
     _name = name;
-    _pass = pass;
+    _passHash = passHash;
     _actual = true;
 
     return true;
 }
 
-bool Server_Client_Info::checkInfo(QString name, QString pass)
+/**
+* @brief Проверяем соответствие пароля
+* @param uPass - предлагаемый пароль
+* @param passHash - правильный хэш пароля
+* @return
+*/
+bool Server_Client_Info::checkPass(QString uPass, QString passHash)
 {
-    if (name=="" || pass=="")  return false;
-
-    if (_name != name) return false;
-    if (_pass != QCryptographicHash::hash(pass.toUtf8(), QCryptographicHash::Md5).toHex()) return false;
+    if ( passHash.isEmpty() ) { return false; }
+    if ( passHash!=QCryptographicHash::hash(uPass.toUtf8(), QCryptographicHash::Md5).toHex()) { return false; }
 
     return true;
 }

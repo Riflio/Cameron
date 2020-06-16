@@ -6,7 +6,8 @@ CONFIG += c++11 console
 CONFIG -= app_bundle
 
 
-SOURCES += main.cpp \    
+SOURCES += main.cpp \
+    Plugins/wthread.cpp \
     rtp/rtp.cpp \
     rtsp/rtsp.cpp \
     rtsp/rtsp_channel.cpp \
@@ -25,7 +26,8 @@ SOURCES += main.cpp \
     rtp/rtp_packet.cpp \
     Server/server_client_info.cpp
 
-HEADERS += \   
+HEADERS += \
+    Plugins/defines.h \
     rtp/rtp.h \
     rtsp/rtsp.h \
     rtsp/rtsp_channel.h \
@@ -54,7 +56,7 @@ HEADERS += \
     Interfaces/ithread.h \
     rtp/rtp_packet.h \
     Interfaces/irtp_packet.h \
-    Assets/wthread.h \
+    Plugins/wthread.h \
     Server/server_client_info.h \
     Interfaces/ithread.h
 

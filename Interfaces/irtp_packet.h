@@ -19,7 +19,8 @@ public:
     virtual unsigned int getTimeStamp()=0;
     virtual unsigned short getSequence()=0;
 
-    virtual QByteArray &data()=0;
+    virtual QByteArray data() const=0;
+    virtual void setData(const QByteArray &data)=0;
 };
 
 #endif // IRTP_PACKET_H

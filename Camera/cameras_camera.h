@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "rtsp/rtsp.h"
-#include "../Interfaces/icameras_camera.h"
+#include "Interfaces/icameras_camera.h"
 
 
 
@@ -13,16 +13,16 @@
 using namespace NS_RSTP;
 
 /**
- * @brief Конкретная камера, точнее её один канал/поток не ебу пока что
- */
+* @brief Конкретная камера, точнее её один канал/поток
+*/
 class Cameras_Camera : public QObject, public ICameras_Camera
 {
     Q_OBJECT
 public:
-    explicit Cameras_Camera(QObject *parent = 0);
+    explicit Cameras_Camera(QObject *parent = nullptr);
     virtual ~Cameras_Camera();
 
-    bool setSettings(QString url ="", int id=-1, int channel=0, int streamPort=4041);
+    bool setSettings(QString url ="", int id =-1, int channel =0, int streamPort =4041);
 
     QString url() { return _url; }
 
@@ -57,6 +57,7 @@ private:
     RTSP * _rtsp;
     int _status;
     int _clientsCount;
+
 };
 
 #endif // CAMERAS_CAMERA_H

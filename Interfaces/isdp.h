@@ -13,7 +13,7 @@ public:
     virtual bool parse(QByteArray data)=0;
     virtual bool make(QByteArray & data)=0;
 
-    //-- время начала и ожидания сессии
+    //-- Время начала и ожидания сессии
     struct sTiming {
         int start =0;
         int stop =0;
@@ -22,23 +22,23 @@ public:
     //-- Атрибуты базовой инфы/медиа
     class sAttribute {
         public:
-        QString name; //-- название
-        QString value; //-- значение
-        QMap<QString, QString> parameters; //-- параметры атрибута
+        QString name; //-- Название
+        QString value; //-- Значение
+        QMap<QString, QString> parameters; //-- Параметры атрибута
     };
 
-    //-- базовая инфа
+    //-- Базовая инфа
     class sOrigin {
     public:
-        int version; //-- версия протокола
-        QString sessionUser; //-- юзер сессии
-        long int sessionID; //-- идентификатор сессии
-        long int sessionVer; //-- версия сессии
-        QString creatorName; //-- идентификатор владельца
-        QString netType; //-- сетевой протокол
-        QHostAddress host; //-- адрес хоста
-        sTiming timing; //-- начало и завершение трансляции
-        QMap<QString, sAttribute*> attribytes; //-- аттрибуты. Ключ - название атрибута
+        int version; //-- Версия протокола
+        QString sessionUser; //-- Юзер сессии
+        long int sessionID; //-- Идентификатор сессии
+        long int sessionVer; //-- Версия сессии
+        QString creatorName; //-- Идентификатор владельца
+        QString netType; //-- Сетевой протокол
+        QHostAddress host; //-- Адрес хоста
+        sTiming timing; //-- Начало и завершение трансляции
+        QMap<QString, sAttribute*> attribytes; //-- Аттрибуты. Ключ - название атрибута
     };
 
 
@@ -54,11 +54,11 @@ public:
         ~sMedia() {
             qDeleteAll(attribytes);
         }
-        mediaTypes type; //-- тип
-        int port; //-- порт
-        QString profile; //-- профиль
-        QList<QString> codecs; //-- поддерживаемые кодеки
-        QMap<QString, sAttribute*> attribytes; //-- аттрибуты. Ключ - название атрибута
+        mediaTypes type; //-- Тип
+        int port; //-- Порт
+        QString profile; //-- Профиль
+        QList<QString> codecs; //-- Поддерживаемые кодеки
+        QMap<QString, sAttribute*> attribytes; //-- Аттрибуты. Ключ - название атрибута
     };
 };
 

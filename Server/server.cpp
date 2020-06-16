@@ -20,19 +20,19 @@ void Server::setCams(ICameras * cameras)
 }
 
 /**
- * @brief Запускаем сервер в работу
- * @return
- */
+* @brief Запускаем сервер в работу
+* @return
+*/
 bool Server::startServer()
 {
-    qInfo()<<"Start server"<<_host<<_port;
+    qInfo()<<"Start server at"<<_host<<_port;
 
     _server = new QTcpServer(this);
-
     connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
+    connect(_server, &QTcpServer::serverError, this, &Server::serverError);
 
 
-    if (! _server->listen(_host, _port) ) {
+    if ( !_server->listen(_host, _port) ) {
         qWarning()<<_server->errorString();
         return false;
     }
@@ -45,37 +45,50 @@ bool Server::startServer()
 }
 
 /**
- * @brief Обрабатываем новое подключение, содаём клиента
- */
+* @brief Обрабатываем новое подключение, содаём клиента
+*/
 void Server::newClient()
 {
     qInfo()<<"New client";
 
     Server_Client * client = new Server_Client(this, _server->nextPendingConnection(), this);
 
-    emit Events->doAction("newClient", QVariantList()<<Events->ARG(client));
+    emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
 
-    connect(client, &Server_Client::destroyed,  [this, client]() { delClient(client->clientID()); });
+    connect(client, &Server_Client::notAlive, this, &Server::delClient);
 
     _clients.insert(client->clientID(), client);
 
 }
 
 /**
-* @brief Клиент удалился, обрабатываем
+* @brief Удаляем клиента
 */
 void Server::delClient(int clientID)
 {
-    qDebug()<<clientID;
+    if ( !_clients.contains(clientID) ) return;
+
+    qInfo()<<"Client disconnected"<<clientID;
+
+    emit Events->doAction("DelClient", QVariantList()<<clientID);
+
+    _clients.value(clientID)->deleteLater();
     _clients.remove(clientID);
+}
+
+void Server::serverError()
+{
+    qWarning()<<"Server error!"<<_server->errorString();
+    emit Events->doAction("ServerError", QVariantList());
 }
 
 /**
 * @brief Проверяем, имеет ли пользователь доступ к управлению
 * @return
 */
-bool Server::userHasAccess(Server_Client * client)
+bool Server::userHasAccess(Server_Client * client) //TODO: Сделать
 {
+
     return true;
 }
 
@@ -94,7 +107,16 @@ void Server::addAvaliableUser(QString name, QString pass)
     _avaliableUsers[name]=pass;
 }
 
+QHostAddress Server::host() const
+{
+    return _host;
+}
+
+int Server::port() const
+{
+    return _port;
+}
+
 Server::~Server()
 {
-    qDebug()<<"";
 }

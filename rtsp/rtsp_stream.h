@@ -6,17 +6,15 @@
 #include <QUdpSocket>
 #include <QTimer>
 
-#include "../Assets/wthread.h"
-#include "../Interfaces/irtsp_stream.h"
-#include "../rtp/rtp.h"
-
-
-/**
- * @brief Общий для стримеров, сдесь собираем готовые фреймы из RTP пакетов
- */
+#include "Plugins/wthread.h"
+#include "Interfaces/irtsp_stream.h"
+#include "rtp/rtp.h"
 
 namespace NS_RSTP {
 
+/**
+* @brief Общий для стримеров, сдесь собираем готовые фреймы из RTP пакетов
+*/
 class RTSP_Stream: public WThread, public RTP, public IRTSP_Stream
 {    
     Q_OBJECT
@@ -24,11 +22,11 @@ public:
     explicit RTSP_Stream(QObject * parent, int port);
     ~RTSP_Stream();
 
-    void process();
+    void loop() override;
+    bool onStarted() override;
 
 
 signals:
-    void finished();
     void connected();
     void disconnected();
     void errored();
@@ -40,8 +38,6 @@ private:
     int _port;
     QUdpSocket * _socket;
 
-    QTimer * _processTimer;
-    void processLoop();
 };
 
 }

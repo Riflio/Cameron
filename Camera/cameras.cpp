@@ -6,10 +6,10 @@ Cameras::Cameras(QObject *parent) : QObject(parent)
 }
 
 /**
- * @brief Создаём новую камеру
- * @param id
- * @return
- */
+* @brief Создаём новую камеру
+* @param id
+* @return
+*/
 ICameras_Camera * Cameras::newCam(int id)
 {
     Cameras_Camera * cam = new Cameras_Camera(this);
@@ -20,19 +20,19 @@ ICameras_Camera * Cameras::newCam(int id)
 }
 
 /**
- * @brief Отдаём указанную камеру
- * @param id
- * @return
- */
+* @brief Отдаём указанную камеру
+* @param id
+* @return
+*/
 ICameras_Camera * Cameras::getCam(int id)
 {
-    return _cams.value(id, NULL);
+    return _cams.value(id, nullptr);
 }
 
 /**
- * @brief Собираем SDP со всех камер, подменяем айдишником камеры параметр управления
- * @return
- */
+* @brief Собираем SDP со всех камер, подменяем айдишником камеры параметр управления
+* @return
+*/
 ISDP * Cameras::getTotalSDP()
 {
     TCams::iterator i;
@@ -44,19 +44,19 @@ ISDP * Cameras::getTotalSDP()
 
         while ( !(cam->status()&Cameras_Camera::S_CONNECTED) && !(cam->status()&Cameras_Camera::S_ERROR) ) //-- придётся ждать коннекта, иначе нам не получить SDP
         {
-           if ( !(cam->status()&Cameras_Camera::S_STARTED)) { //-- если ещё не запустили, запускаем
-               if (!cam->start()) { break; }
+           if ( !(cam->status()&Cameras_Camera::S_STARTED) ) { //-- Если ещё не запустили, запускаем
+               if ( !cam->start() ) { break; }
            }
            QCoreApplication::processEvents();
         }
 
-        if (!(cam->status()&Cameras_Camera::S_CONNECTED)) continue; //-- Не удалось подключиться, пропускаем
+        if ( !(cam->status()&Cameras_Camera::S_CONNECTED) ) continue; //-- Не удалось подключиться, пропускаем
 
         SDP::sMedia * media = cam->getSDPMedia();
 
-        media->attribytes.value("control")->value=(QString("trackID=%1").arg( i.key() )); //-- подменим параметр управления на йдишник камеры, что бы в дальнейшем знать какой клиент к какой камере относится
+        media->attribytes.value("control")->value=(QString("track/%1").arg( i.key() )); //-- подменим параметр управления на йдишник камеры, что бы в дальнейшем знать какой клиент к какой камере относится
 
-        sdp->medias.append( media );
+        sdp->medias.append(media);
 
     }
 

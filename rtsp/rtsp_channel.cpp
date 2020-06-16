@@ -4,29 +4,23 @@
 #include <QDebug>
 namespace NS_RSTP {
 
-RTSP_Channel::RTSP_Channel(RTSP * parent):
-    QObject(parent)
+RTSP_Channel::RTSP_Channel(QObject * parent, RTSP * rtsp)
+    : QObject(parent), _connect(rtsp), _id(_connect->channelsCount()), _session(0), _streamer(nullptr), _alived(false)
 {
-    _connect = parent;
-    _id = _connect->channelsCount();
-    _session = 0;
-    _streamer = NULL;
     _aliveTimer = new QTimer(this);
-    _aliveTimer->setInterval(50000);
-    _alived = false;
-
-    connect(_aliveTimer, SIGNAL(timeout()), this, SLOT(alive()) );
+    _aliveTimer->setInterval(50000);    
+    connect(_aliveTimer, &QTimer::timeout, this, &RTSP_Channel::alive);
 }
 
 /**
- * @brief Устанавливаем соединение
- * @param port
- */
+* @brief Устанавливаем соединение
+* @param port
+*/
 void RTSP_Channel::setup(int port)
 {
     qInfo()<<"setup"<<port;
 
-    //-- подготавливаем стример
+    //-- Подготавливаем стример
     _streamer = new RTSP_Stream(this, port);
     connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
     connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
@@ -36,20 +30,18 @@ void RTSP_Channel::setup(int port)
 }
 
 /**
- * @brief Начинаем воспроизведение
- */
+* @brief Начинаем воспроизведение
+*/
 void RTSP_Channel::play()
 {
     qInfo()<<"play";
 
-    if (_aliveTimer->isActive()) return; //-- Мы уже запущены
+    if ( _aliveTimer->isActive() ) return; //-- Мы уже запущены
 
     _streamer->start();
     _alived = true;
     _aliveTimer->start();
     _connect->play(id());
-
-
 }
 
 /**
@@ -60,7 +52,7 @@ void RTSP_Channel::alive()
     qInfo()<<"alive";
 
     //-- Если с момента предыдущего запроса не было подтверждения ответа, то значит, что умерли (сеть или хз)
-    if (!_alived) {
+    if ( !_alived ) {
         _aliveTimer->stop();
         emit errored();
         return;
@@ -91,7 +83,7 @@ void RTSP_Channel::onStreamError()
 */
 void RTSP_Channel::teardown()
 {    
-    if (!_aliveTimer->isActive()) return; //-- Если мы не были запущены
+    if ( !_aliveTimer->isActive() ) return; //-- Если мы не были запущены
     qInfo()<<"teardown";
 
     _aliveTimer->stop();

@@ -11,19 +11,19 @@ class Server_Client_Info : public QObject
 {
     Q_OBJECT
 public:
-    explicit Server_Client_Info(QObject *parent = nullptr);
+    explicit Server_Client_Info(QObject *parent =nullptr);
 
 signals:
 
 public slots:
-    bool checkInfo(QString name, QString pass);
-    bool setInfo(QString name, QString pass);
+    bool checkPass(QString uPass, QString pass);
+    bool setInfo(QString name, QString passHash);
     QString getName();
     bool isActual();
 
 private:
     QString _name;
-    QString _pass;
+    QString _passHash;
     bool _actual;
 };
 

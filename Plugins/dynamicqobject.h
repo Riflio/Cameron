@@ -20,7 +20,7 @@ public:
     bool addSlot(QObject *object, const char *signal, const QString &slotName);
     bool removeSlot(const QString &name);
 
-    bool addSignal(const QString &name, QObject *object, const char *slot);
+    bool addSignal(const QString &name, QObject *object, const char *slot, Qt::ConnectionType connType=Qt::AutoConnection);
     bool removeSignal(const QString &name);
     QVariantList activate(const QString &signalName, const QVariantList &args);
 
@@ -50,8 +50,6 @@ private:
     } signal_t;
     QVector<signal_t> m_signalList;
     QMultiHash<QString, int> m_signalHash;
-    void * m_parameters[11]; // max 10 parameters + ret value
-
 };
 
 #endif // DYNAMICQOBJECT_H

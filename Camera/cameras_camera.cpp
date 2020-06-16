@@ -1,13 +1,9 @@
 #include "cameras_camera.h"
 
-Cameras_Camera::Cameras_Camera(QObject *parent) : QObject(parent)
+Cameras_Camera::Cameras_Camera(QObject *parent)
+    : QObject(parent), _id(-1), _url(""), _streamPort(-1), _channel(-1), _rtsp(nullptr), _status(S_NONE), _clientsCount(0)
 {
-    qInfo()<<"Camera new";
-    _status = S_NONE;
-    _url = "";
-    _rtsp = NULL;
-    _clientsCount = 0;
-
+    qInfo()<<"Camera new";    
 }
 
 int Cameras_Camera::id()
@@ -33,9 +29,9 @@ bool Cameras_Camera::setSettings(QString url, int id, int channel, int streamPor
 
 bool Cameras_Camera::start()
 {
-    if (_url=="") return false;
+    if ( _url.isEmpty() ) return false;
 
-    if ( _status & S_STARTED) return true;
+    if ( _status&S_STARTED ) return true;
 
     qInfo()<<"Camera start ";
 
@@ -57,8 +53,8 @@ bool Cameras_Camera::start()
 }
 
 /**
- * @brief Удачно подключились к камере
- */
+* @brief Удачно подключились к камере
+*/
 void Cameras_Camera::onCameraConnected()
 {
     qInfo()<<"Camera connected ";
@@ -67,8 +63,8 @@ void Cameras_Camera::onCameraConnected()
 }
 
 /**
- * @brief Отключились от камеры (сами или камера закрыла соединение)
- */
+* @brief Отключились от камеры (сами или камера закрыла соединение)
+*/
 void Cameras_Camera::onCameraDisconnected()
 {
     qInfo()<<"Camera disconnected";
@@ -90,19 +86,19 @@ void Cameras_Camera::onCameraErrored()
 }
 
 /**
- * @brief Подготавливаем камеру к вещанию
- * @return
- */
+* @brief Подготавливаем камеру к вещанию
+* @return
+*/
 bool Cameras_Camera::setup()
 {
-    if (_status & S_SETUPED) return true;
-    if (_status & S_ERROR) return false;
+    if ( _status&S_SETUPED ) return true;
+    if ( _status&S_ERROR ) return false;
 
     qInfo()<<"";
 
     RTSP_Channel * channel = _rtsp->getChannel(_channel);
 
-    if (channel==NULL) {
+    if ( channel==nullptr ) {
         qWarning()<<"Channel not found!"<<_channel;
         return false;
     }
@@ -123,18 +119,18 @@ void Cameras_Camera::onSetuped(int)
 }
 
 /**
- * @brief Запускаем передачу видео
- * @return
- */
+* @brief Запускаем передачу видео
+* @return
+*/
 bool Cameras_Camera::play()
 {
     qInfo()<<"Camera play";
 
-    if (_status & S_ERROR) return false;
+    if ( _status&S_ERROR ) return false;
 
     _clientsCount++;
 
-    if ( _status & S_PLAYED ) return true; //-- нам незачем дважды запускать
+    if ( _status&S_PLAYED ) return true; //-- Уже запущена
 
     _rtsp->getChannel(_channel)->play();
     return true;
@@ -145,7 +141,7 @@ bool Cameras_Camera::stop()
     qInfo()<<"Camera stop";
     _clientsCount--;
 
-    if ( (_status & S_PLAYED)  && _clientsCount<=0) { //-- Если запущена и не осталось больше подключившихся
+    if ( (_status & S_PLAYED)  && (_clientsCount<=0) ) { //-- Если запущена и не осталось больше подключившихся
         _rtsp->getChannel(_channel)->teardown();        
         _status = S_NONE;
     }
@@ -161,30 +157,30 @@ bool Cameras_Camera::go()
 {
     qInfo()<<"";
 
-    //-- запускаем камеру, если ещё не запущена
-    if (!start()) return false;
+    //-- Запускаем камеру, если ещё не запущена
+    if ( !start() ) return false;
 
-    //-- ждём, пока приконнектится //TODO: Заменить на QEventLoop
+    //-- Ждём, пока приконнектится //TODO: Заменить на QEventLoop
     while ( !(_status & S_CONNECTED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
-    //-- подготавливаем камеру к вещанию
-    if (!setup()) return false;
+    //-- Подготавливаем камеру к вещанию
+    if ( !setup() ) return false;
 
-    //-- ждём, пока поток камеры настраивается
+    //-- Ждём, пока поток камеры настраивается
     while ( !(_status & S_SETUPED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
-    //-- запускаем вещание
-    if (!play()) return false;
+    //-- Запускаем вещание
+    if ( !play() ) return false;
 
-    //-- и ждём, пока начнётся
+    //-- И ждём, пока начнётся
     while ( !(_status & S_PLAYED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
 
     return !(_status & S_ERROR);
 }
 
 /**
- * @brief Начали приём видео
- */
+* @brief Начали приём видео
+*/
 void Cameras_Camera::onPlayed(int)
 {
     qInfo()<<"Camera played ";    
@@ -204,9 +200,9 @@ void Cameras_Camera::onTeardowned(int chanelID)
 }
 
 /**
- * @brief  Отдаём SDP медиа инфу о камере
- * @return
- */
+* @brief  Отдаём SDP медиа инфу о камере
+* @return
+*/
 SDP::sMedia * Cameras_Camera::getSDPMedia()
 {
     qDebug()<<"Camera getSDP";
@@ -214,9 +210,9 @@ SDP::sMedia * Cameras_Camera::getSDPMedia()
 }
 
 /**
- * @brief Отдаём стример потока камеры
- * @return
- */
+* @brief Отдаём стример потока камеры
+* @return
+*/
 NS_RSTP::IRTSP_Stream * Cameras_Camera::getStreamer()
 {
     return _rtsp->getChannel(_channel)->getStreamer();

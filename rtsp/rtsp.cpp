@@ -1,24 +1,23 @@
 #include "rtsp.h"
 namespace NS_RSTP {
 
-RTSP::RTSP(QObject *parent) : QObject(parent)
+RTSP::RTSP(QObject *parent) : QObject(parent), _reqID(0)
 {
-    _sckConnect = new QTcpSocket(this);
-    _reqID = 0;
+    _sckConnect = new QTcpSocket(nullptr); //-- Без предка, потому что нам нужно самим в нужной последовательности всё удалить
 
     _sdp = new SDP(this);
 
-    connect(_sckConnect, SIGNAL(readyRead()), this, SLOT(onSckConnectReadyRead()));
-    connect(_sckConnect, SIGNAL(connected()), this, SLOT(onSckConnectConnected()));
-    connect(_sckConnect, SIGNAL(disconnected()), this, SLOT(onSckConnectDisconnected()));
-    connect(_sckConnect, SIGNAL(error(QAbstractSocket::SocketError)),this, SLOT(onSckConnectError(QAbstractSocket::SocketError)));    
+    connect(_sckConnect, &QTcpSocket::readyRead, this, &RTSP::onSckConnectReadyRead);
+    connect(_sckConnect, &QTcpSocket::connected, this, &RTSP::onSckConnectConnected);
+    connect(_sckConnect, &QTcpSocket::disconnected, this, &RTSP::onSckConnectDisconnected);
+    connect(_sckConnect, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &RTSP::onSckConnectError);
 }
 
 
 /**
- * @brief 1.1 Коннектимся к камере
- * @param url
- */
+* @brief 1.1 Коннектимся к камере
+* @param url
+*/
 void RTSP::cameraConnect(QHostAddress address, int port, QString params)
 {
     qInfo()<<"RTSP cameraConnect"<<address<<port;
@@ -26,7 +25,6 @@ void RTSP::cameraConnect(QHostAddress address, int port, QString params)
     _gateway = QString("rtsp://%1:%2/%3").arg(address.toString()).arg(port).arg(params);
     _sckConnect->connectToHost(address, port);
 }
-
 
 void RTSP::cameraConnect(QString url)
 {
@@ -38,11 +36,9 @@ void RTSP::cameraConnect(QString url)
     _sckConnect->connectToHost( decodeURL.host(), decodeURL.port() );
 }
 
-
-
 /**
- * @brief 1.2 Подконнектится получилось, начинаем общение
- */
+* @brief 1.2 Подконнектится получилось, начинаем общение
+*/
 void RTSP::onSckConnectConnected()
 {
     qInfo()<<"Camera socket connected";
@@ -50,8 +46,8 @@ void RTSP::onSckConnectConnected()
 }
 
 /**
- * @brief 2. Запросим камеру о доступных командах
- */
+* @brief 2. Запросим камеру о доступных командах
+*/
 void RTSP::options()
 {
     qInfo()<<"RTSP options";
@@ -65,8 +61,8 @@ void RTSP::options()
 }
 
 /**
- * @brief 3 Запросим камеру о доступных каналах и их свойствах
- */
+* @brief 3 Запросим камеру о доступных каналах и их свойствах
+*/
 void RTSP::describe()
 {
     qInfo()<<"RTSP describe";
@@ -78,10 +74,10 @@ void RTSP::describe()
 }
 
 /**
- * @brief 4. Создаём канал у камеры и выставляем настройки
- * @param channel
- * @param port
- */
+* @brief 4. Создаём канал у камеры и выставляем настройки
+* @param channel
+* @param port
+*/
 void RTSP::setup(int channel, int port)
 {
     qInfo()<<"RTSP setup"<<channel<<port;
@@ -91,23 +87,21 @@ void RTSP::setup(int channel, int port)
 
     int r =send(SETUP, params);
 
-
     reqHistories.insert(r, ReqHistory(SETUP, channel));
 }
 
 
 /**
- * @brief 5. Отсылаем запрос на начало воспроизведения
- * @param channel
- */
+* @brief 5. Отсылаем запрос на начало воспроизведения
+* @param channel
+*/
 void RTSP::play(int channel)
 {
     qInfo()<<"RTSP play"<<channel;
 
     SendParams params;
-    params.insert( "Session", QString::number( _channels.at(channel)->session()) );
+    params.insert("Session", QString::number( _channels.at(channel)->session()));
     params.insert("Range", "npt=0.000-");
-
 
     int r = send(PLAY, params);
 
@@ -115,21 +109,21 @@ void RTSP::play(int channel)
 }
 
 /**
- * @brief Через заданные промежутки времени отсылаем запрос, что мы живы
- */
+* @brief Через заданные промежутки времени отсылаем запрос, что мы живы
+*/
 void RTSP::alive(int channel)
 {
     SendParams params;
-    params.insert( "Session", QString::number( _channels.at(channel)->session()) );
+    params.insert("Session", QString::number( _channels.at(channel)->session()));
 
     int r = send(ALIVE, params);
     reqHistories.insert(r, ReqHistory(ALIVE, channel));
 }
 
 /**
- * @brief 7. Отсылаем запрос на завершение воспроизведения
- * @param channel
- */
+* @brief 7. Отсылаем запрос на завершение воспроизведения
+* @param channel
+*/
 void RTSP::teardown(int channel)
 {
     qInfo()<<"RTSP teardown"<<channel;
@@ -137,7 +131,7 @@ void RTSP::teardown(int channel)
     emit toTeardown(channel);
 
     SendParams params;
-    params.insert( "Session", QString::number( _channels.at(channel)->session()) );
+    params.insert("Session", QString::number( _channels.at(channel)->session()));
     int r = send(TEARDOWN, params);
 
     reqHistories.insert(r, ReqHistory(TEARDOWN, channel));
@@ -150,27 +144,26 @@ void RTSP::teardown(int channel)
 */
 void RTSP::onSckConnectReadyRead()
 {
-
     /**
      * Ответ может состоять из двух частей всё, что до пустой строки будем считать заголовком,
-     * всё, что порсле - дополнительными данными
-     * их парсинг зависит уже от того, что в заголовке
+     * всё, что после - дополнительными данными.
+     * Их парсинг зависит уже от того, что в заголовке
      */
 
     QString responseText = _sckConnect->readAll();
 
     qInfo()<<"RTSP answer"<<responseText;
 
-    //-- разделяем построчно
+    //-- Разделяем построчно
     QStringList responseList = responseText.split("\r\n");
 
-    //-- в первой строке - статус
-    if (responseList.takeAt(0)!="RTSP/1.0 200 OK") {
+    //-- В первой строке - статус
+    if ( responseList.takeAt(0)!="RTSP/1.0 200 OK" ) {
         qWarning()<<"ERROR";
         return;
     }
 
-    //-- разбираем строки ответа на составляющие
+    //-- Разбираем строки ответа на составляющие
     struct responseData {
         QString command;
         QString value;
@@ -178,22 +171,22 @@ void RTSP::onSckConnectReadyRead()
     };
     QMap<QString, responseData> responseDataList;
 
-    QString extraData=""; //--  дополнительные данные
+    QString extraData=""; //-- Дополнительные данные
 
-    //-- нужно узнать на какой запрос этот ответ
+    //-- Нужно узнать на какой запрос этот ответ
     ReqHistory historyReq;
 
-    //-- команда-всё, что до ":" значение - всё, что после и до первой ";" а дальше дополнительные параметры, если есть.
+    //-- Команда-всё, что до ":" значение - всё, что после и до первой ";" а дальше дополнительные параметры, если есть.
     QRegExp rx("(.+):\\s?([^;]*);?(.*)?", Qt::CaseInsensitive, QRegExp::RegExp2);
 
-    //-- парсим до появления пустой строки
+    //-- Парсим до появления пустой строки
     while (responseList.length()>0) {
 
         QString responseStr = responseList.takeAt(0);
 
-        if (responseStr=="") { break; }
+        if ( responseStr.isEmpty() ) { break; }
 
-        if (rx.indexIn(responseStr)>-1) {
+        if ( rx.indexIn(responseStr)>-1 ) {
 
             responseData data;
             data.command = rx.cap(1);
@@ -202,17 +195,17 @@ void RTSP::onSckConnectReadyRead()
 
             responseDataList.insert(data.command, data);
 
-            //-- пока разбираем весь ответ заодно ищем айдишник запроса, что бы узнать на какой хоть запрос этот ответ
+            //-- Пока разбираем весь ответ заодно ищем айдишник запроса, что бы узнать на какой хоть запрос этот ответ
             if ( data.command=="Cseq" ) {
                 historyReq = reqHistories.value(data.value.toInt());
             }
         }
     }
 
-    //-- заголовок разобрали, оставшиеся строки соединим обратно и засунем в дополнительные данные
+    //-- Заголовок разобрали, оставшиеся строки соединим обратно и засунем в дополнительные данные
     extraData = responseList.join("\r\n");
 
-    //-- так, запрос узнали, ответ разобрали, решаем, что с ним делать
+    //-- Так, запрос узнали, ответ разобрали, решаем, что с ним делать
     switch (historyReq.method) {
 
         case OPTIONS:{
@@ -221,15 +214,15 @@ void RTSP::onSckConnectReadyRead()
         }
 
         case DESCRIBE: {
-            //-- парсим каналы
+            //-- Парсим каналы
 
-            //-- распарсим sdp данные
+            //-- Распарсим sdp данные
             _sdp->parse(extraData.toUtf8());
 
             qDebug()<<"SDP channels count"<<_sdp->medias.length();
 
             for (int i = 0; i < _sdp->medias.length(); ++i) {
-                RTSP_Channel * channel = new RTSP_Channel(this);
+                RTSP_Channel * channel = new RTSP_Channel(nullptr, this); //-- Без предка, потому что самостоятельно будем удалять, т.к. они могут перед удалением что-нить отправить
 
                 //-- Отлавливаем события
                 connect(channel, &RTSP_Channel::errored, this, &RTSP::errored);
@@ -238,7 +231,6 @@ void RTSP::onSckConnectReadyRead()
                 _channels.append(channel);
             }
 
-
             emit connected();
             break;
         }
@@ -246,7 +238,7 @@ void RTSP::onSckConnectReadyRead()
         case SETUP: {
             RTSP_Channel * channel = getChannel(historyReq.channel);
 
-            //-- от ответа пока что нам нужен номер сессии
+            //-- От ответа, пока что, нам нужен номер сессии
             channel->_session = responseDataList.value("Session").value.toInt();
 
             emit setuped(channel->id());
@@ -274,16 +266,15 @@ void RTSP::onSckConnectReadyRead()
             break;
         }
 
-
     }
 }
 
 
 /**
- * @brief Подготавливаем и отправляем запрос к камере
- * @param method
- * @param params
- */
+* @brief Подготавливаем и отправляем запрос к камере
+* @param method
+* @param params
+*/
 int RTSP::send(METHODS method, SendParams params)
 {
     QString sMethod;
@@ -300,36 +291,36 @@ int RTSP::send(METHODS method, SendParams params)
 
     _reqID++;
 
-    //-- запишем базовую необходимую инфу
-    _sckConnect->write( QString("%1 %2 RTSP/1.0\r\n").arg(sMethod).arg(_gateway).toUtf8() );
-    _sckConnect->write( QString("CSeq: %1\r\n").arg(_reqID).toUtf8() );
+    //-- Запишем базовую необходимую инфу
+    _sckConnect->write(QString("%1 %2 RTSP/1.0\r\n").arg(sMethod).arg(_gateway).toUtf8());
+    _sckConnect->write(QString("CSeq: %1\r\n").arg(_reqID).toUtf8());
 
-    //-- пробегаемся по всем параметрам и добавляем к запросу
+    //-- Пробегаемся по всем параметрам и добавляем к запросу
     SendParams::iterator i;
     for (i = params.begin(); i != params.end(); ++i) {
         _sckConnect->write( QString("%1: %2\r\n").arg(i.key()).arg(i.value()).toUtf8() );
     }
 
-    //-- заканчиваем пустой строкой
+    //-- Заканчиваем пустой строкой
     _sckConnect->write("\r\n");
 
     return _reqID;
 }
 
 /**
- * @brief Отдаём количество каналов
- * @return
- */
+* @brief Отдаём количество каналов
+* @return
+*/
 int RTSP::channelsCount()
 {
     return _channels.count();
 }
 
 /**
- * @brief Отдаём конкретный канал
- * @param id
- * @return
- */
+* @brief Отдаём конкретный канал
+* @param id
+* @return
+*/
 RTSP_Channel * RTSP::getChannel(int id)
 {
     return (id<channelsCount()) ? _channels[id] : NULL;
@@ -343,6 +334,7 @@ void RTSP::onSckConnectDisconnected()
 
 void RTSP::onSckConnectError(QAbstractSocket::SocketError)
 {
+
     qWarning()<<"Camera socket error: "<< _sckConnect->errorString();
     emit errored();
 }
@@ -350,10 +342,9 @@ void RTSP::onSckConnectError(QAbstractSocket::SocketError)
 
 RTSP::~RTSP()
 {
-    qDebug()<<"";
-    if (_sckConnect->isOpen()) {
-        _sckConnect->close();
-    }
+    qDeleteAll(_channels);
+    _channels.clear();
+    _sckConnect->deleteLater();
 }
 
 }

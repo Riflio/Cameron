@@ -21,10 +21,12 @@ public:
     unsigned short getSequence();
     const int RTP_HEADER_SIZE = 12;
 
-    QByteArray & data();
+    QByteArray data() const;
+    void setData(const QByteArray &data);
 
 private:
     QByteArray _data;
+
 };
 
 #endif // RTP_PACKET_H

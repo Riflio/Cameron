@@ -7,7 +7,7 @@
 #include <QTimer>
 
 
-#include "../sdp/sdp.h"
+#include "sdp/sdp.h"
 #include "rtp/rtp.h"
 
 #include "rtsp/rtsp_stream.h"
@@ -18,7 +18,7 @@ class RTSP_Channel: public QObject
 {
     Q_OBJECT
 public:
-    RTSP_Channel(RTSP * parent);
+    RTSP_Channel(QObject * parent, RTSP * rtsp);
     ~RTSP_Channel();
 
 

@@ -7,9 +7,7 @@
 #include <QVariant>
 #include <QVariantList>
 #include "dynamicqobject.h"
-
 #include "usingleton.h"
-
 
 
 class Eventer : public QObject
@@ -20,14 +18,14 @@ public:
 
 public slots:
     QVariantList doAction(QString, QVariantList);
-    QVariantList doAction(QString, QVariant);  
+    QVariantList doAction(QString, QVariant);
 
-    void addAction(QString, QObject *, const char *);
-    void addAction(QString, QVariant, QString);
+    void addAction(QString, QObject *, const char *, Qt::ConnectionType connType = Qt::AutoConnection);
+    void addAction(QString, QVariant, QString,  Qt::ConnectionType connType = Qt::AutoConnection);
 
 public:
     DynamicQObject *  eWrapper;
-    QVariant ARG(void * p) { return qVariantFromValue((void *)p); }
+    QVariant ARG(void * p) { return QVariant::fromValue((void *)p); }
 
 };
 

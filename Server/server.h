@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QTcpServer>
-#include "../Interfaces/iserver.h"
+#include "Interfaces/iserver.h"
 #include "server_client.h"
 
 #include "Camera/cameras.h"
@@ -11,13 +11,13 @@
 #include "Plugins/PluginEventsWrapper.h"
 
 /**
- * @brief The Server class
- */
+* @brief The Server class
+*/
 class Server : public QObject, public IServer
 {
     Q_OBJECT
 public:
-    explicit Server(QObject *parent = 0);
+    explicit Server(QObject *parent = nullptr);
     virtual ~Server();
     bool setSettings(QString host, int port);
 
@@ -26,6 +26,9 @@ public:
 
     void addAvaliableUser(QString name, QString pass);
 
+    QHostAddress host() const;
+    int port() const;
+
 signals:
 
 public slots:
@@ -33,7 +36,8 @@ public slots:
 
 private slots:
     void newClient();
-    void delClient(int clientID);
+    void delClient(int clientID=-1);
+    void serverError();
 
 private:
     QTcpServer * _server;
