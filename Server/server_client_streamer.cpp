@@ -21,12 +21,11 @@ int Server_Client_Streamer::id()
 void Server_Client_Streamer::loop()
 {    
 
-    QByteArray frame;
-    if ( !_streamer->getPacketData(_buffOffset, frame) ) { return; } //-- Нет новых фреймов с камеры, курим бамбук
+    const QByteArray * frame = _streamer->getPacketData(_buffOffset);
+    if ( frame==nullptr ) { return; } //-- Нет новых фреймов с камеры, курим бамбук
 
-    _socket->writeDatagram(frame, _host, _port);
-    //_socket->waitForBytesWritten();
-
+    _socket->writeDatagram(*frame, _host, _port);
+    _socket->waitForBytesWritten();
 }
 
 bool Server_Client_Streamer::onStarted()

@@ -1,10 +1,9 @@
 #ifndef MULTIACCESSBUFFER_H
 #define MULTIACCESSBUFFER_H
 
-#include <QList>
-#include <QByteArray>
+#include <QVector>
 #include <QMutexLocker>
-#include <QDebug>
+
 /**
 * @brief The MultiAccessBuffer class
 * Потоко-безопасный круговой буфер размером (max) с доступом нескольких желающих с того места+1, где они в прошлый раз брали данные (get) не зависимо от остальных
@@ -13,64 +12,66 @@
 template <class BufType>  class MultiAccessBuffer
 {
 public:
-    MultiAccessBuffer(long long int max=1000): _max(max), _offset(0), _mutex() {  }
+    MultiAccessBuffer(int max=10): _buffSize(0), _max(max), _offset(0), _mutex() {  }
 
     bool put(const BufType & data)
     {
         QMutexLocker locker(&_mutex);
 
-        if (_buffer.size()>=_max) {
-            _buffer.removeFirst();
+        if ( _buffSize<_max ) { //-- Заполняем, пока можем
+            _buffer.append(data);
+            _buffSize++;
+            _offset++;
+            return true;
         }
 
-        _buffer.append(data);
+        if ( _offset>=_max ) { //-- Пошли на круг
+            _offset = 0;
+        }
 
+        _buffer[_offset] = data;
         _offset++;
 
         return true;
     }
 
-    bool get(long long int & offset, BufType & data) {
+    const BufType * get(int & offset) const
+    {
         QMutexLocker locker(&_mutex);
 
-        if (_buffer.empty() || offset>_offset) return false; //-- либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
+        if ( offset>=_max) { offset = 0; } //-- Сделали круг
+        if ( _buffer.empty() || (offset>=_offset) ) { return nullptr; } //-- Либо вообще нет данных, либо выше конца буфера - нет ничего нового для отдачи
 
-        //-- если буфер не заполнен, то за верхнюю границу принимаем то, на сколько заполнен, что бы не ждать заполнения
-        int limit = (_offset<_max)? _offset : _max;
-
-        if (offset==-1) { //-- не знают актуальной позиции, хотят начать сначала буфера
-            offset = (_offset - limit ) + 1;
-        } else
-        if (offset<-1) { //-- Не знают актуальной позиции, хотят начать с текущего момента за вычетом указанного количества
-            offset = qMax((long long int)0, _offset + offset + 1);
+        if ( offset<0 ) { //-- Хотят начать с текущей позиции, за вычетом указанного значения
+            int toOffset = (_offset>qAbs(offset))? _offset+offset-1 : _offset+offset+_max-1;
+            if ( toOffset>=_buffSize ) { return nullptr; } //-- Мы ещё столько не накопили
+            offset = toOffset;
         }
 
-        int index =  limit - (_offset - offset)  - 1;
+        int idx = offset;
 
-        if (index<0) { //-- буфер уже сделал круг, кто обратился за данными, тот слишком долго думал - установим его позицию в начало буфера
-            offset =  (_offset - limit ) + 2; //-- +2 потому что в этот раз мы уже отдадим элемент
-            index = 0;
-        } else  {
-            offset++;
-        }
+        offset += 1; //-- Что бы в следующий раз сразу следующий элемент получил
 
-
-        data = _buffer.at(index);
-
-        return true;
+        return &_buffer.at(idx);
     }
 
-    long long offset(long long int cur=0)  { return _offset - cur; }
+    int cur() const
+    {
+        return _offset-1;
+    }
 
-    int length() {  return _buffer.length(); }
+    int size() const
+    {
+        return _buffSize;
+    }
 
 private:
-    QList<BufType> _buffer;
-    long long int _max; //-- максимальный размер буфера
-    long long int _offset; //-- счётчик добавленных данных что бы знать относительное смещение желающих
+    QVector<BufType> _buffer;
+    int _buffSize; //-- Текущая заполненность буфера
+    int _max; //-- Максимальный размер буфера
+    int _offset; //-- Индекс, куда добавлять будем данные
+    mutable QMutex _mutex;
 
-
-    QMutex _mutex;
 };
 
 #endif // MULTIACCESSBUFFER_H

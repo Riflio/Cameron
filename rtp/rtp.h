@@ -22,11 +22,12 @@ class RTP: public virtual IRTP, private MultiAccessBuffer<QByteArray>
 {
 public:
     explicit RTP();
+    virtual ~RTP();
 
-    bool newPacket(QByteArray packet);
-    bool getPacket(long long & offset, IRTP_Packet *& packet);
-    bool getPacketData(long long & offset, QByteArray & packet);
-    long long int bufOffset();
+    bool newPacket(QByteArray packet) override;
+    IRTP_Packet * getPacket(int & offset) const override;
+    const QByteArray * getPacketData(int &offset) const override;
+    int bufOffset() const override;
 
 private:   
     QMutex _mutex;    

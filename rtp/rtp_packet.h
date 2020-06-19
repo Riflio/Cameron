@@ -11,14 +11,14 @@ public:
     RTP_packet();
     virtual ~RTP_packet() {}
 
-    int getPayloadStart();
-    int getPayloadLength();
+    int getPayloadStart() const;
+    int getPayloadLength() const;
 
-    bool hasPadding();
+    bool hasPadding() const;
 
-    BYTE  getCC();
-    unsigned int getTimeStamp();
-    unsigned short getSequence();
+    BYTE getCC() const;
+    unsigned int getTimeStamp() const;
+    unsigned short getSequence() const;
     const int RTP_HEADER_SIZE = 12;
 
     QByteArray data() const;

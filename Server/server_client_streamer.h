@@ -34,7 +34,7 @@ private:
     IRTSP_Stream * _streamer;
     QUdpSocket * _socket;
 
-    long long int _buffOffset;
+    int _buffOffset;
 
 };
 

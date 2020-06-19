@@ -8,6 +8,11 @@ RTP::RTP()
 
 }
 
+RTP::~RTP()
+{
+
+}
+
 /**
 * @brief Нам прислали новый rtp пакет, добавляем в очередь
 * @param packet
@@ -28,16 +33,16 @@ bool RTP::newPacket(QByteArray packet)
 * @brief Берём из очереди данные по заданному смещению и отдаём
 * @return
 */
-bool RTP::getPacketData(long long & offset, QByteArray & packet)
+const QByteArray * RTP::getPacketData(int & offset) const
 {
-    if ( !get(offset, packet) ) return false;
-
-    return true;
+    const QByteArray * packet = get(offset);
+    if ( packet==nullptr ) { return nullptr; }
+    return packet;
 }
 
-long long int RTP::bufOffset()
+int RTP::bufOffset() const
 {
-    return offset(0);
+    return cur();
 }
 
 /**
@@ -46,16 +51,16 @@ long long int RTP::bufOffset()
 * @param packet
 * @return
 */
-bool RTP::getPacket(long long & offset, IRTP_Packet *& packet)
+IRTP_Packet * RTP::getPacket(int &offset) const
 {    
 
-    QByteArray data;
-    if ( !get(offset, data) ) { packet = nullptr; return false; }
+    const QByteArray *data = get(offset);
+    if ( data==nullptr ) { return nullptr; }
 
-    packet = new RTP_packet();
-    packet->setData(data);
+    IRTP_Packet * packet = new RTP_packet();
+    packet->setData(*data);
 
-    return true;
+    return packet;
 }
 
 

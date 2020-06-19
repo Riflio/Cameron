@@ -15,12 +15,12 @@ void RTP_packet::setData(const QByteArray &data)
     _data = data;
 }
 
-int RTP_packet::getPayloadStart()
+int RTP_packet::getPayloadStart() const
 {
     return RTP_HEADER_SIZE + getCC() * 4;
 }
 
-int RTP_packet::getPayloadLength()
+int RTP_packet::getPayloadLength() const
 {
     return _data.length() - getPayloadStart();
 }
@@ -29,18 +29,18 @@ int RTP_packet::getPayloadLength()
 * @brief Количество CSRC идентификаторов
 * @return
 */
-BYTE RTP_packet::getCC()
+BYTE RTP_packet::getCC() const
 {
     BYTE c = (BYTE)((_data[0]) & 0x0f);
     return  c;
 }
 
-bool RTP_packet::hasPadding()
+bool RTP_packet::hasPadding() const
 {
     return ((_data[0] & 0x20) >> 5) == 1;
 }
 
-unsigned int RTP_packet::getTimeStamp()
+unsigned int RTP_packet::getTimeStamp() const
 {    
     int idx = 4; //-- С какой позиции начиная
 
@@ -54,7 +54,7 @@ unsigned int RTP_packet::getTimeStamp()
 }
 
 
-unsigned short RTP_packet::getSequence()
+unsigned short RTP_packet::getSequence() const
 {
     unsigned short s;
 
