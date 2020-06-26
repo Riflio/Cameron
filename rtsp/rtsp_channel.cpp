@@ -7,8 +7,14 @@ namespace NS_RSTP {
 RTSP_Channel::RTSP_Channel(QObject * parent, RTSP * rtsp)
     : QObject(parent), _connect(rtsp), _id(_connect->channelsCount()), _session(0), _streamer(nullptr), _alived(false)
 {
+    qDebug()<<"RTSP_Channel created!";
+    _streamer = new RTSP_Stream(this);
+    connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
+    connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
+    connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
+
     _aliveTimer = new QTimer(this);
-    _aliveTimer->setInterval(50000);    
+    _aliveTimer->setInterval(50000);
     connect(_aliveTimer, &QTimer::timeout, this, &RTSP_Channel::alive);
 }
 
@@ -19,12 +25,7 @@ RTSP_Channel::RTSP_Channel(QObject * parent, RTSP * rtsp)
 void RTSP_Channel::setup(int port)
 {
     qInfo()<<"setup"<<port;
-
-    //-- Подготавливаем стример
-    _streamer = new RTSP_Stream(this, port);
-    connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
-    connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
-    connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
+    _streamer->setPort(port);
 
     _connect->setup(id(), port);
 }
@@ -38,7 +39,7 @@ void RTSP_Channel::play()
 
     if ( _aliveTimer->isActive() ) return; //-- Мы уже запущены
 
-    _streamer->start();
+    _streamer->start(QThread::HighPriority);
     _alived = true;
     _aliveTimer->start();
     _connect->play(id());
@@ -74,8 +75,8 @@ void RTSP_Channel::alived()
 */
 void RTSP_Channel::onStreamError()
 {
+    qDebug()<<"";
     emit errored();
-    teardown();
 }
 
 /**
@@ -83,7 +84,7 @@ void RTSP_Channel::onStreamError()
 */
 void RTSP_Channel::teardown()
 {    
-    if ( !_aliveTimer->isActive() ) return; //-- Если мы не были запущены
+    if ( !_aliveTimer->isActive() ) { return; } //-- Если мы не были запущены
     qInfo()<<"teardown";
 
     _aliveTimer->stop();

@@ -4,7 +4,9 @@
 Server::Server(QObject *parent)
     :QObject(parent)
 {
-
+    _server = new QTcpServer(this);
+    connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
+    connect(_server, &QTcpServer::serverError, this, &Server::serverError);
 }
 
 bool Server::setSettings(QString host, int port)
@@ -26,11 +28,6 @@ void Server::setCams(ICameras * cameras)
 bool Server::startServer()
 {
     qInfo()<<"Start server at"<<_host<<_port;
-
-    _server = new QTcpServer(this);
-    connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
-    connect(_server, &QTcpServer::serverError, this, &Server::serverError);
-
 
     if ( !_server->listen(_host, _port) ) {
         qWarning()<<_server->errorString();

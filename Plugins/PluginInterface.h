@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QString>
 #include <QVariant>
-#include <QDebug>
 
 
 class PluginInterface
@@ -15,7 +14,10 @@ public:
 
     virtual void Init() =0;
 
-    QVariant ARG(void * p) { return qVariantFromValue((void *)p); }
+    virtual void InstallPlugin() =0;
+    virtual void UnInstallPlugin() =0;
+
+    QVariant ARG(void * p) { return QVariant::fromValue((void *)p); }
 
 
 
@@ -24,7 +26,7 @@ public slots:
 
 signals:
     void doAction(QString, QVariantList);
-    void addAction(QString, QObject *, const char *);
+    void addAction(QString, QObject *, const char *, Qt::ConnectionType);
 };
 
 Q_DECLARE_INTERFACE(PluginInterface, "com.Cameron.Application.PluginInterface/1.0")

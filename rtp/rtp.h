@@ -3,34 +3,35 @@
 
 #include <QObject>
 #include <QByteArray>
-#include <QQueue>
 #include <QMutex>
 #include <QMutexLocker>
-#include "../Interfaces/irtp.h"
-#include "Assets/multiaccessbuffer.h"
+
+#include "Interfaces/irtp.h"
+#include "Assets/circleBufferWriter.h"
 
 #include "rtp_packet.h"
 
 /**
- * @brief Базовый класс для принятого голого RTP пакета
- */
-
+* @brief Базовый класс для принятых голых RTP пакетов
+*/
 namespace NS_RSTP {
 
 
-class RTP: public virtual IRTP, private MultiAccessBuffer<QByteArray>
+class RTP: public virtual IRTP
 {
 public:
     explicit RTP();
     virtual ~RTP();
 
-    bool newPacket(QByteArray packet) override;
-    IRTP_Packet * getPacket(int & offset) const override;
-    const QByteArray * getPacketData(int &offset) const override;
-    int bufOffset() const override;
+    bool newPacket(const QByteArray &packetData) override;
+    TIRTPPacketsBuffer * rtpPacketsBuffer() const override;
 
 private:   
-    QMutex _mutex;    
+    QMutex _mutex;
+
+    typedef CircleBufferWriter<RTP_packet> TRTPPacketsBuffer;
+    TRTPPacketsBuffer * _rtpPacketsBuffer;
+
 };
 
 }

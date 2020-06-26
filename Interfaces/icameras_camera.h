@@ -30,6 +30,14 @@ public:
     virtual ISDP::sMedia * getSDPMedia() =0;
     virtual NS_RSTP::IRTSP_Stream * getStreamer() =0;
 
+signals:
+    virtual void errored() =0;
+    virtual void connected() =0;
+    virtual void disconnected() =0;
+    virtual void setuped() =0;
+    virtual void played() =0;
+    virtual void teardowned() =0;
+
 };
 
 #endif // ICAMERAS_CAMERA_H

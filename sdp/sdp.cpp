@@ -15,6 +15,10 @@ bool SDP::parse(QByteArray data)
 {
     qInfo()<<"SDP Parse"<<data;
 
+    qDeleteAll(medias);
+    medias.clear();
+    origin = sOrigin();
+
     QString dataText = data;
 
     QList<QString> dataList = dataText.split("\r\n");

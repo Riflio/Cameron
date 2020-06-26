@@ -14,6 +14,10 @@
 
 namespace NS_RSTP {
 class RTSP;
+
+/**
+* @brief Канал вещания камеры
+*/
 class RTSP_Channel: public QObject
 {
     Q_OBJECT

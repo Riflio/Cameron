@@ -8,6 +8,8 @@
 #include "Plugins/wthread.h"
 #include "Camera/cameras_camera.h"
 
+#include "Assets/circleBufferReader.h"
+
 #include <QTimer>
 
 /**
@@ -34,8 +36,7 @@ private:
     IRTSP_Stream * _streamer;
     QUdpSocket * _socket;
 
-    int _buffOffset;
-
+    CircleBufferReader<IRTP_Packet> * _streamerFrames;
 };
 
 #endif // SERVER_CLIENT_STREAMER_H

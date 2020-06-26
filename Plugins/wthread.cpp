@@ -164,7 +164,7 @@ void WThread::_process()
     bool isAfterStarted = onAfterStarted();
     if ( !isAfterStarted ) { stop(); onFinished();  return; }
 
-    _loopTimer->start(3);
+    _loopTimer->start(1);
     //-- Ну и сразу запускаем нашу очередь, мы в ней будем, пока кто-нить quit/exit не вызовет
     _eventLoop->exec();
 

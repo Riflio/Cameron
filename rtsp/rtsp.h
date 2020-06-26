@@ -13,7 +13,9 @@
 
 namespace NS_RSTP {
 
-
+/**
+* @brief Управляем каналами вещания камеры
+*/
 class RTSP : public QObject
 {
     Q_OBJECT
@@ -50,12 +52,13 @@ signals:
 public slots:
     void cameraConnect(QHostAddress address, int port, QString params);
     void cameraConnect(QString url);
+    void cameraDisconnect();
 
 private slots:
     void onSckConnectReadyRead();
     void onSckConnectConnected();
     void onSckConnectDisconnected();
-    void onSckConnectError(QAbstractSocket::SocketError);    
+    void onSckConnectError(QAbstractSocket::SocketError);
 
 private:
     QTcpSocket * _sckConnect; //-- Сокет для общения

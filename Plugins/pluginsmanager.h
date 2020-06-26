@@ -22,6 +22,8 @@ public:
     bool loadPlugins(QString path);
 
 signals:
+    void doAction(QString, QVariantList);
+    void addAction(QString, QObject *, const char *, Qt::ConnectionType connType = Qt::AutoConnection);
 
 public slots:
 

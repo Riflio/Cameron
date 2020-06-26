@@ -24,6 +24,9 @@ public:
     QByteArray data() const;
     void setData(const QByteArray &data);
 
+    RTP_packet& operator=(const QByteArray & data);
+    RTP_packet& operator=(const RTP_packet & packet);
+
 private:
     QByteArray _data;
 

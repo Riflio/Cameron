@@ -71,7 +71,7 @@ bool PluginsManager::loadPlugins(QString path)
 
 
         connect(loader.instance(), SIGNAL(doAction(QString, QVariantList)), Events, SIGNAL(doAction(QString, QVariantList)));
-        connect(loader.instance(), SIGNAL(addAction(QString, QObject*, const char*)), Events, SIGNAL(addAction(QString, QObject*, const char*)));
+        connect(loader.instance(), SIGNAL(addAction(QString, QObject*, const char*, Qt::ConnectionType)), Events, SIGNAL(addAction(QString, QObject*, const char*,Qt::ConnectionType)));
         pI->Init();
     }
 

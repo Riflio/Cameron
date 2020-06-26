@@ -2,7 +2,7 @@ TEMPLATE = app
 
 QT += network core sql
 
-CONFIG += c++11 console
+CONFIG += c++11
 CONFIG -= app_bundle
 
 
@@ -27,7 +27,13 @@ SOURCES += main.cpp \
     Server/server_client_info.cpp
 
 HEADERS += \
+    Assets/circleBufferReader.h \
+    Assets/circleBufferWriter.h \
+    Interfaces/IBuffer.h \
+    Interfaces/ICircleBufferReader.h \
+    Interfaces/ICircleBufferWriter.h \
     Plugins/defines.h \
+    Plugins/wpropertyinterface.h \
     rtp/rtp.h \
     rtsp/rtsp.h \
     rtsp/rtsp_channel.h \
@@ -40,7 +46,6 @@ HEADERS += \
     Camera/cameras.h \
     Camera/cameras_camera.h \
     Server/server_client_streamer.h \
-    Assets/multiaccessbuffer.h \
     Plugins/eventer.h \
     Plugins/PluginEventsWrapper.h \
     Plugins/PluginInterface.h \

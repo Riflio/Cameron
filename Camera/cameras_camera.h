@@ -4,11 +4,7 @@
 #include <QObject>
 #include "rtsp/rtsp.h"
 #include "Interfaces/icameras_camera.h"
-
-
-
 #include "Plugins/PluginEventsWrapper.h"
-
 
 using namespace NS_RSTP;
 
@@ -39,8 +35,13 @@ public:
 
 signals:
     void errored();
+    void connected();
+    void disconnected();
+    void setuped();
+    void played();
+    void teardowned();
 
-public slots:
+protected slots:
     void onCameraConnected();
     void onCameraDisconnected();
     void onCameraErrored();

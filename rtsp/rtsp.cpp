@@ -37,6 +37,16 @@ void RTSP::cameraConnect(QString url)
 }
 
 /**
+* @brief Отключаемся от камеры
+*/
+void RTSP::cameraDisconnect()
+{
+    qDeleteAll(_channels);
+    _channels.clear();
+    _sckConnect->close();
+}
+
+/**
 * @brief 1.2 Подконнектится получилось, начинаем общение
 */
 void RTSP::onSckConnectConnected()
@@ -128,14 +138,13 @@ void RTSP::teardown(int channel)
 {
     qInfo()<<"RTSP teardown"<<channel;
 
-    emit toTeardown(channel);
-
     SendParams params;
     params.insert("Session", QString::number( _channels.at(channel)->session()));
     int r = send(TEARDOWN, params);
 
     reqHistories.insert(r, ReqHistory(TEARDOWN, channel));
 
+    emit toTeardown(channel);
 }
 
 /**
@@ -252,6 +261,7 @@ void RTSP::onSckConnectReadyRead()
 
         case TEARDOWN: {
             emit teardowned(historyReq.channel);
+            _sckConnect->close();
             break;
         }
 
@@ -323,7 +333,7 @@ int RTSP::channelsCount()
 */
 RTSP_Channel * RTSP::getChannel(int id)
 {
-    return (id<channelsCount()) ? _channels[id] : NULL;
+    return (id<channelsCount()) ? _channels[id] : nullptr;
 }
 
 void RTSP::onSckConnectDisconnected()
@@ -342,8 +352,8 @@ void RTSP::onSckConnectError(QAbstractSocket::SocketError)
 
 RTSP::~RTSP()
 {
-    qDeleteAll(_channels);
-    _channels.clear();
+    qDebug()<<"";
+    cameraDisconnect();
     _sckConnect->deleteLater();
 }
 

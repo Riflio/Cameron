@@ -7,8 +7,6 @@ AppCore::AppCore(QObject *parent) : QObject(parent)
 
 }
 
-
-
 void AppCore::appStart()
 {
     qSetMessagePattern(">>>>%{time yyyyMMdd h:mm:ss.zzz} %{type} %{file} %{function} %{message}"); //-- Шаблон сообщений лога

@@ -15,6 +15,18 @@ void RTP_packet::setData(const QByteArray &data)
     _data = data;
 }
 
+RTP_packet &RTP_packet::operator=(const QByteArray &data)
+{
+    _data = data;
+    return *this;
+}
+
+RTP_packet &RTP_packet::operator=(const RTP_packet &packet)
+{
+    _data = packet._data;
+    return *this;
+}
+
 int RTP_packet::getPayloadStart() const
 {
     return RTP_HEADER_SIZE + getCC() * 4;

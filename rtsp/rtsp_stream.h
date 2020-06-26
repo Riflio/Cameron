@@ -19,11 +19,14 @@ class RTSP_Stream: public WThread, public RTP, public IRTSP_Stream
 {    
     Q_OBJECT
 public:
-    explicit RTSP_Stream(QObject * parent, int port);
+    explicit RTSP_Stream(QObject * parent);
     ~RTSP_Stream();
+
+    void setPort(int port);
 
     void loop() override;
     bool onStarted() override;
+    void onFinished() override;
 
 
 signals:

@@ -1,16 +1,24 @@
 #include "rtp.h"
 #include <QDebug>
+#include <QThread>
+
 namespace NS_RSTP {
 
 RTP::RTP()
-    : MultiAccessBuffer(500), _mutex()
+    : _mutex()
 {
+    _rtpPacketsBuffer = new TRTPPacketsBuffer(BUFFER_SIZE);
 
 }
 
 RTP::~RTP()
 {
+    delete _rtpPacketsBuffer;
+}
 
+IRTP::TIRTPPacketsBuffer *RTP::rtpPacketsBuffer() const
+{
+    return reinterpret_cast<IRTP::TIRTPPacketsBuffer*>(_rtpPacketsBuffer);
 }
 
 /**
@@ -18,51 +26,12 @@ RTP::~RTP()
 * @param packet
 * @return
 */
-bool RTP::newPacket(QByteArray packet)
+bool RTP::newPacket(const QByteArray &packetData)
 {
     QMutexLocker locker(&_mutex);
+    if ( packetData.isEmpty() ) return false;
 
-    if ( packet.isEmpty() ) return false;
-
-    return put(packet);
-
+    return _rtpPacketsBuffer->put(packetData);
 }
-
-
-/**
-* @brief Берём из очереди данные по заданному смещению и отдаём
-* @return
-*/
-const QByteArray * RTP::getPacketData(int & offset) const
-{
-    const QByteArray * packet = get(offset);
-    if ( packet==nullptr ) { return nullptr; }
-    return packet;
-}
-
-int RTP::bufOffset() const
-{
-    return cur();
-}
-
-/**
-* @brief Берём из очереди данные по заданному смещению и отдаём пакет
-* @param offset
-* @param packet
-* @return
-*/
-IRTP_Packet * RTP::getPacket(int &offset) const
-{    
-
-    const QByteArray *data = get(offset);
-    if ( data==nullptr ) { return nullptr; }
-
-    IRTP_Packet * packet = new RTP_packet();
-    packet->setData(*data);
-
-    return packet;
-}
-
-
 
 }

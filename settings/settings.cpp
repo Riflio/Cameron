@@ -37,7 +37,7 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
 
             if ( xml.name()=="camera" ) {
                 QXmlStreamAttributes attributes = xml.attributes();
-                if ( !attributes.hasAttribute("id") || !attributes.hasAttribute("url") ) return false;
+                if ( !attributes.hasAttribute("id") || !attributes.hasAttribute("url") ) { continue; }
 
                 cameras->newCam(attributes.value("id").toInt())->setSettings(
                             attributes.value("url").toString(),

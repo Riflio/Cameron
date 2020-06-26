@@ -245,7 +245,7 @@ void Server_Client::answerPLAY(int cseq, int streamID)
 
     Server_Client_Streamer * streamer = _streamers.at(streamID);
 
-    if ( streamer==NULL ) {
+    if ( streamer==nullptr ) {
         qWarning()<<"Streamer was deleted O_O";
         answer(500, cseq);
         return;
