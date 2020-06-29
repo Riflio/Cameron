@@ -25,8 +25,8 @@ class WThread: public QObject, public IThread
 public:
 
     enum WThreadStatus {
-        WT_STARTED=4,
-        WT_RUNNING=8,
+        WT_STARTED=2,
+        WT_RUNNING=4,
         WT_PAUSED=16
     };
 

@@ -58,7 +58,7 @@ void WThread::_setID(int id)
 
 bool WThread::_start(QThread::Priority priority, bool delOnFinish)
 {
-    if ( (m_status & WT_STARTED) ) { //-- Был на паузе или уже запущен
+    if ( (m_status & WT_PAUSED) ) {
         if ( !_loopTimer->isActive() ) _loopTimer->start();
         m_status &= ~WT_PAUSED;
         m_status |= WT_RUNNING;
@@ -70,33 +70,35 @@ bool WThread::_start(QThread::Priority priority, bool delOnFinish)
 
     setParent(nullptr);
 
-    if ( _thread==nullptr ) _thread = new QThread(curParent); //-- Что бы сам удалился, без напоминаний
+    if ( _thread==nullptr ) { _thread = new QThread(curParent); } //-- Что бы сам удалился, без напоминаний
     moveToThread(_thread);
 
-    //-- Как только будет запущен поток, запускаем выполнение Worker`а
-    connect(_thread, &QThread::started, this, &WThread::process);
+    if ( !(m_status & WT_STARTED) ) {
+        //-- Как только будет запущен поток, запускаем выполнение Worker`а
+        connect(_thread, &QThread::started, this, &WThread::process);
 
-    //-- Если предок удалится, то нам то же нужно завершаться и удаляться
-    if ( curParent!=nullptr ) {
-        connect(curParent, &QObject::destroyed, [&](){ _thread->quit(); _thread->wait(); });
-    } else
-    if ( !delOnFinish ) {
-        //qWarning()<<"WThread has no parent and delOnFinish not enabled!";
-    }
+        //-- Если предок удалится, то нам то же нужно завершаться и удаляться
+        if ( curParent!=nullptr ) {
+            connect(curParent, &QObject::destroyed, [&](){ _thread->quit(); _thread->wait(); });
+        } else
+        if ( !delOnFinish ) {
+            //qWarning()<<"WThread has no parent and delOnFinish not enabled!";
+        }
 
-    if ( delOnFinish ) {
-        //-- Как только свистнет, что закончил - удаляемся гордо
-        connect(this, &WThread::finished, this, &WThread::deleteLater, Qt::DirectConnection);
-        connect(this, &WThread::finished, _thread, &QThread::quit, Qt::DirectConnection);
-    } else {
-        //-- Как только свистнет, что закончил - возвращаем поток откуда взяли, что бы предок отработал удаление
-        WThread * worker = this;
-        QThread * thread = _thread;
-        connect(this, &WThread::finished, this, [worker, thread, curThread, curParent]() {
-            thread->quit();
-            worker->moveToThread(curThread);
-            worker->setParent(curParent);
-        }, Qt::DirectConnection);
+        if ( delOnFinish ) {
+            //-- Как только свистнет, что закончил - удаляемся гордо
+            connect(this, &WThread::finished, this, &WThread::deleteLater, Qt::DirectConnection);
+            connect(this, &WThread::finished, _thread, &QThread::quit, Qt::DirectConnection);
+        } else {
+            //-- Как только свистнет, что закончил - возвращаем поток откуда взяли, что бы предок отработал удаление
+            WThread * worker = this;
+            QThread * thread = _thread;
+            connect(this, &WThread::finished, this, [worker, thread, curThread, curParent]() {
+                thread->quit();
+                worker->moveToThread(curThread);
+                worker->setParent(curParent);
+            }, Qt::DirectConnection);
+        }
     }
 
     //-- Сразу запускаем выполнение потока
@@ -118,12 +120,12 @@ bool WThread::_stop()
 {
     if ( !(m_status&WT_RUNNING) ) return false;
 
-    if ( _eventLoop!=nullptr ) _eventLoop->quit();
-
     m_status &= ~WT_RUNNING;
     m_status &= ~WT_PAUSED;
 
     emit statusChanged(m_status);
+
+    if ( _eventLoop!=nullptr ) _eventLoop->quit();
 
     return true;
 }
@@ -132,10 +134,10 @@ bool WThread::_pause()
 {
     if ( !(m_status&WT_RUNNING) ) return false;
 
-    _loopTimer->stop();
-
     m_status &= ~WT_RUNNING;
     m_status |= WT_PAUSED;
+
+    _loopTimer->stop();
 
     emit statusChanged(m_status);
 
