@@ -12,7 +12,7 @@ Server_Client::Server_Client( QObject *parent, QTcpSocket * socket, Server * ser
     connect(_socket, &QTcpSocket::readyRead, this, &Server_Client::request);
 
     _aliveTimeOverTimer = new QTimer(this);
-    _aliveTimeOverTimer->setInterval(120000); //--
+    _aliveTimeOverTimer->setInterval(60000); //--
     connect(_aliveTimeOverTimer, &QTimer::timeout, this, &Server_Client::aliveTimeOver);
 
     _aliveTimeOverTimer->start(); //-- Клиент должен высылать подтверждение каждые 55 секунд, если с последнего запроса клиента о подтверждении прошло N времени, значит клиент отъехал нахуй.
@@ -435,5 +435,6 @@ bool Server_Client::loginUser(QString uName, QString uPass)
 
 Server_Client::~Server_Client()
 {
+    qDebug()<<"";
 }
 

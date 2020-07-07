@@ -22,11 +22,12 @@ void Server_Client_Streamer::loop()
 {    
 
     const IRTP_Packet * packet = _streamerFrames->get();
-    if ( packet==nullptr ) { return; } //-- Нет новых фреймов с камеры, курим бамбук
+    if ( packet==nullptr ) { return; }
 
     QByteArray data = packet->data();
 
-    if ( data.isEmpty() ) return;
+    if ( data.isEmpty() ) { return; }
+
 
     _socket->writeDatagram(data, _host, _port);
     _socket->waitForBytesWritten();
@@ -41,5 +42,4 @@ bool Server_Client_Streamer::onStarted()
 Server_Client_Streamer::~Server_Client_Streamer()
 {
     qDebug()<<"";
-    if ( _socket->isOpen() ) { _socket->close(); }
 }
