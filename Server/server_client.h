@@ -40,14 +40,14 @@ private:
   Server * _server;
   int _id;
 
-  void answerAlive(int cseq, qint32 sessionId);
+  void answerAlive(int cseq, quint32 sessionId);
   void answerOPTIONS(int cseq);
   void answerDESCRIBE(int cseq, int trackId);
-  void answerPLAY(int cseq, qint32 sessionId);
-  void answerTEARDOWN(int cseq, qint32 sessionId);
-  void answerSETUP(int cseq, int videoPort, int audioPort, qint32 sessionId);
-  void answerGETPARAMETER(int cseq, qint32 sessionId);
-  void answer(int statusCode, int cseq =0, QByteArray data ="", qint32 sessionId =-1, bool lastRN =true);
+  void answerPLAY(int cseq, quint32 sessionId);
+  void answerTEARDOWN(int cseq, quint32 sessionId);
+  void answerSETUP(int cseq, int videoPort, int audioPort, quint32 sessionId);
+  void answerGETPARAMETER(int cseq, quint32 sessionId);
+  void answer(int statusCode, int cseq =0, QByteArray data ="", quint32 sessionId =0, bool lastRN =true);
 
   QMap<int, Server_Client_Streamer*> _streamers; //-- <cameraId, Server_Client_Streamer*> Стримеры, которые запустил этот клиент
 
@@ -60,10 +60,10 @@ private:
     int trackId =-1;
   } TSessionInfo;
 
-  static QMap<qint32, TSessionInfo> _sessions;
-  static qint32 generateSessionId();
+  static QMap<quint32, TSessionInfo> _sessions;
+  static quint32 generateSessionId();
 
-  inline bool checkSessionExists(qint32 sessionId);
+  inline bool checkSessionExists(quint32 sessionId);
 
 };
 

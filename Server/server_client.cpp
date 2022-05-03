@@ -4,7 +4,7 @@
 #include <QRandomGenerator>
 #include <QDebug>
 
-QMap<qint32, Server_Client::TSessionInfo> Server_Client::_sessions;
+QMap<quint32, Server_Client::TSessionInfo> Server_Client::_sessions;
 
 Server_Client::Server_Client( QObject *parent, QTcpSocket * socket, Server * server ) : Server_Client_Info(parent), _socket(socket), _server(server)
 {
@@ -106,7 +106,7 @@ void Server_Client::request()
   }
 
   //-- Айдишник сессии
-  qint32 sessionId = dataParams.value("Session", "-1").toInt();
+  quint32 sessionId = dataParams.value("Session", "-1").toUInt();
 
   //== Обрабатываем запрос ==//
 
@@ -159,7 +159,7 @@ void Server_Client::request()
     }
 
     //-- Каждый setup это своя сессия
-    qint32 sessionId = generateSessionId();
+    quint32 sessionId = generateSessionId();
     TSessionInfo sessionInfo;
     sessionInfo.trackId = trackID;
     _sessions[sessionId] = sessionInfo;
@@ -230,7 +230,7 @@ void Server_Client::answerDESCRIBE(int cseq, int trackId)
   sdpData.prepend("Content-Type: application/sdp\r\n");
   sdpData.prepend(QString("Content-Base: rtsp://%1:%2\r\n").arg(_server->_host.toString()).arg(_server->_port).toUtf8()); //-- Относительно этого адреса будут последующие запросы
 
-  answer(200, cseq, sdpData, -1, false);
+  answer(200, cseq, sdpData, 0, false);
 }
 
 /**
@@ -238,7 +238,7 @@ void Server_Client::answerDESCRIBE(int cseq, int trackId)
 * @param cseq
 * @param sessionId
 */
-void Server_Client::answerPLAY(int cseq, qint32 sessionId)
+void Server_Client::answerPLAY(int cseq, quint32 sessionId)
 {
   qInfo()<<"Answer PLAY";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -268,7 +268,7 @@ void Server_Client::answerPLAY(int cseq, qint32 sessionId)
 * @param cseq
 * @param sessionId
 */
-void Server_Client::answerTEARDOWN(int cseq, qint32 sessionId)
+void Server_Client::answerTEARDOWN(int cseq, quint32 sessionId)
 {
   qDebug()<<"Answer TEARDOWN";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -296,7 +296,7 @@ void Server_Client::answerTEARDOWN(int cseq, qint32 sessionId)
 * @param audioPort
 * @param se
 */
-void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, qint32 sessionId)
+void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, quint32 sessionId)
 {
   qInfo()<<"Answer SETUP"<<cseq<<"videoPort"<<videoPort<<"sessionId:"<<sessionId;
 
@@ -339,7 +339,7 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, qint32 s
 * Некоторые плееры используют получение параметра как ALIVE запрос
 * @param cseq
 */
-void Server_Client::answerGETPARAMETER(int cseq, qint32 sessionId)
+void Server_Client::answerGETPARAMETER(int cseq, quint32 sessionId)
 {
   qInfo()<<"GET_PARAMETER";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -361,7 +361,7 @@ void Server_Client::streamFinished(int streamID)
 * @brief Отвечаем на запрос подтверждения, что клиент жив
 * @param cseq
 */
-void Server_Client::answerAlive(int cseq, qint32 sessionId)
+void Server_Client::answerAlive(int cseq, quint32 sessionId)
 {
   qInfo()<<"ALIVE";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -379,14 +379,14 @@ void Server_Client::answerAlive(int cseq, qint32 sessionId)
 * @param sessionId - айдишник сессии. Если не нужен, то -1.
 * @param lastRN - нужно ли отправлять финальные \r\n
 */
-void Server_Client::answer(int statusCode, int cseq, QByteArray data, qint32 sessionId, bool lastRN)
+void Server_Client::answer(int statusCode, int cseq, QByteArray data, quint32 sessionId, bool lastRN)
 {
   if ( statusCode==200 || statusCode==1 ) {
     data.prepend(QString("Server: Cameron\r\n").toUtf8());
     data.prepend(QString("CSeq: %1\r\n").arg(cseq).toUtf8());
     data.prepend("RTSP/1.0 200 OK\r\n");
 
-    if ( sessionId>=0 ) {
+    if ( sessionId>0 ) {
       data.append(QString("Session: %1;timeout=%2\r\n").arg(
         QString::number(sessionId),
         QString::number(_aliveTimeOverTimer->interval())
@@ -426,12 +426,12 @@ void Server_Client::aliveTimeOver()
 * @brief Создаём уникальный айдишник сессии
 * @return
 */
-qint32 Server_Client::generateSessionId()
+quint32 Server_Client::generateSessionId()
 {
-  qint32 sessionId = 0;
+  quint32 sessionId = 0;
 
   do {
-    sessionId = abs(QRandomGenerator::global()->generate());
+    sessionId = QRandomGenerator::global()->generate();
   } while (_sessions.contains(sessionId));
 
   return sessionId;
@@ -442,7 +442,7 @@ qint32 Server_Client::generateSessionId()
 * @param sessionId
 * @return
 */
-bool Server_Client::checkSessionExists(qint32 sessionId)
+bool Server_Client::checkSessionExists(quint32 sessionId)
 {
   return _sessions.contains(sessionId);
 }
