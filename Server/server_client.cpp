@@ -431,7 +431,7 @@ qint32 Server_Client::generateSessionId()
   qint32 sessionId = 0;
 
   do {
-    sessionId = QRandomGenerator::global()->generate();
+    sessionId = abs(QRandomGenerator::global()->generate());
   } while (_sessions.contains(sessionId));
 
   return sessionId;

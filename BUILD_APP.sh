@@ -3,4 +3,4 @@ mkdir -p /APP/build-Cameron
 cd /APP/build-Cameron
 rm -rf *
 /opt/Qt/Qt630/install/bin/qmake /APP/Cameron.pro
-make VERBOSE=1
+make -j10 VERBOSE=1

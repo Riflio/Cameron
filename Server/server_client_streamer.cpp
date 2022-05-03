@@ -28,7 +28,6 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
 {
   if ( packet->data().isEmpty() ) { return; }
   _socket->writeDatagram(packet->data(), _host, _port);
-  //_socket->waitForBytesWritten();
 }
 
 /**
