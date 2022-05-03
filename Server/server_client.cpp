@@ -1,21 +1,22 @@
 #include "server_client.h"
 #include "server.h"
 #include <QRegularExpression>
+#include <QRandomGenerator>
 #include <QDebug>
 
-Server_Client::Server_Client( QObject *parent, QTcpSocket * socket, Server * server ):
-    Server_Client_Info(parent), _socket(socket), _server(server)
+QMap<qint32, Server_Client::TSessionInfo> Server_Client::_sessions;
+
+Server_Client::Server_Client( QObject *parent, QTcpSocket * socket, Server * server ) : Server_Client_Info(parent), _socket(socket), _server(server)
 {
+  _id = _socket->socketDescriptor();
+  connect(_socket, &QTcpSocket::readyRead, this, &Server_Client::request);
 
-    _id = _socket->socketDescriptor();
+  //-- Клиент должен высылать подтверждение каждые N секунд, если с последнего запроса клиента о подтверждении прошло N времени, значит клиент отъехал нахуй
+  _aliveTimeOverTimer = new QTimer(this);
+  _aliveTimeOverTimer->setInterval(120000);
+  _aliveTimeOverTimer->start();
 
-    connect(_socket, &QTcpSocket::readyRead, this, &Server_Client::request);
-
-    _aliveTimeOverTimer = new QTimer(this);
-    _aliveTimeOverTimer->setInterval(60000); //--
-    connect(_aliveTimeOverTimer, &QTimer::timeout, this, &Server_Client::aliveTimeOver);
-
-    _aliveTimeOverTimer->start(); //-- Клиент должен высылать подтверждение каждые 55 секунд, если с последнего запроса клиента о подтверждении прошло N времени, значит клиент отъехал нахуй.
+  connect(_aliveTimeOverTimer, &QTimer::timeout, this, &Server_Client::aliveTimeOver);
 }
 
 int Server_Client::clientID()
@@ -31,10 +32,9 @@ void Server_Client::onCameraErrored()
   deleteLater(); //TODO: Чё делать то??
 }
 
-
 /**
- * @brief Есть новый запрос
- */
+* @brief Есть новый запрос
+*/
 void Server_Client::request()
 {
   QString data = _socket->readAll();
@@ -48,15 +48,15 @@ void Server_Client::request()
     return;
   }
 
-  //-- разбираем по строкам
+  //-- Разбираем по строкам
   QStringList dataList = _requestData.split("\r\n");
 
   _requestData = "";
 
-  //-- берём первую строку, узнаём команду, исходный юрл и версию ртсп
+  //-- Берём первую строку, узнаём команду, исходный юрл и версию ртсп
   QString initLine = dataList.takeAt(0);
 
-  //-- парсим
+  //-- Парсим
   QRegularExpression rxInit("([A-Z_]*)\\s([^\\s]*)\\s(.*)");
 
   QRegularExpressionMatch rxInitMath = rxInit.match(initLine);
@@ -81,20 +81,23 @@ void Server_Client::request()
     return;
   }
 
-  //-- парсим остальные пришедшие строки
+  //-- Парсим параметры строки запроса
+  QRegularExpressionMatch rxTrackIDMatch = QRegularExpression("/track/([\\d]*)").match(reqSource.path());
+  int trackID = (rxTrackIDMatch.hasMatch())? rxTrackIDMatch.captured(1).toInt() : -1; //-- Айдишник конкретного трека
+
+  //-- Парсим остальные пришедшие строки
   QHash<QString, QString> dataParams; //-- список параметров параметр-значение
   QRegularExpression rxParams("([^:]*):\\s(.*)");
-  QRegularExpressionMatch rxParamsMath;
 
   while (dataList.length()>0) {
     QString paramStr = dataList.takeAt(0);
-    rxParamsMath = rxParams.match(paramStr);
+    QRegularExpressionMatch rxParamsMath = rxParams.match(paramStr);
     if ( rxParamsMath.hasMatch() ) {
       dataParams.insert(rxParamsMath.captured(1), rxParamsMath.captured(2));
     }
   }
 
-  //-- получаем общие параметры
+  //-- Парсим параметр айдишник запроса
   int cseq = dataParams.value("CSeq", "-1").toInt();
   if ( cseq==-1 ) {
     qWarning()<<"Not set CSeq O_o, check request!";
@@ -102,13 +105,17 @@ void Server_Client::request()
     return;
   }
 
-  //-- Обрабатываем запрос
-  if ( command=="OPTIONS" ) {
+  //-- Айдишник сессии
+  qint32 sessionId = dataParams.value("Session", "-1").toInt();
+
+  //== Обрабатываем запрос ==//
+
+  if ( command=="OPTIONS" ) { //-- Спрашивают какие запросы мы можем обрабатывать
     answerOPTIONS(cseq);
     return;
   }
 
-  //-- Проврим, залогинен ли пользователь, т.к. дальше без авторизации низя
+  //-- Проверим, залогинен ли пользователь, т.к. дальше без авторизации не обрабатываем никакие команды
   if ( !isActual() ) {
     if ( dataParams.contains("Authorization") ) { //-- Если в заголовках есть "Authorization:", значит нужно распарсить по нему
       QStringList authData = QString(QByteArray::fromBase64(dataParams.value("Authorization").mid(6, -1).toUtf8())).split(':');
@@ -129,12 +136,12 @@ void Server_Client::request()
     }
   }
 
-  if ( command=="DESCRIBE" ) {
-    answerDESCRIBE(cseq);
+  if ( command=="DESCRIBE" ) { //-- Спрашивают что у нас есть из камер (потоков)
+    answerDESCRIBE(cseq, trackID);
     return;
   }
 
-  if ( command=="SETUP" ) {
+  if ( command=="SETUP" ) { //-- Настраивают поток
     QString transport = dataParams.value("Transport");
     QRegularExpression rxClientPorts("client_port=([\\d]*)-([\\d]*)");
 
@@ -145,46 +152,49 @@ void Server_Client::request()
       return;
     }
 
-    QRegularExpression rxCamID("/track/([\\d]*)");
-    QRegularExpressionMatch rxCamIDMatch = rxCamID.match(reqSource.path());
-    if ( !rxCamIDMatch.hasMatch() ) {
-      qWarning()<<"Not set track number! Check request!";
+    if ( trackID<0 ) {
+      qWarning()<<"Not set track id! Check request!";
       answer(404, cseq);
       return;
     }
 
-    answerSETUP(cseq, rxClientPortsMatch.captured(1).toInt(), rxClientPortsMatch.captured(2).toInt(), rxCamIDMatch.captured(1).toInt());
+    //-- Каждый setup это своя сессия
+    qint32 sessionId = generateSessionId();
+    TSessionInfo sessionInfo;
+    sessionInfo.trackId = trackID;
+    _sessions[sessionId] = sessionInfo;
+
+    answerSETUP(cseq, rxClientPortsMatch.captured(1).toInt(), rxClientPortsMatch.captured(2).toInt(), sessionId);
     return;
   }
 
-  if ( command=="PLAY" ) {
-    answerPLAY(cseq, dataParams.value("Session", "-1").toInt());
+  if ( command=="PLAY" ) { //-- Запускают трансляцию потока
+    answerPLAY(cseq, sessionId);
     return;
   }
 
-  if ( command=="TEARDOWN" ) {
-    answerTEARDOWN(cseq, dataParams.value("Session", "-1").toInt());
+  if ( command=="TEARDOWN" ) { //-- Завершают трансляцию потока
+    answerTEARDOWN(cseq, sessionId);
     return;
   }
 
-  if ( command=="ALIVE" ) {
-    answerAlive(cseq);
+  if ( command=="ALIVE" ) { //-- Уведомляют, что им всё ещё нужна трансляция
+    answerAlive(cseq, sessionId);
     return;
   }
 
-  if ( command=="GET_PARAMETER" ) {
-    answerGETPARAMETER(cseq);
+  if ( command=="GET_PARAMETER" ) { //-- Запрашивают какой-то параметр
+    answerGETPARAMETER(cseq, sessionId);
     return;
   }
 
   //TODO: Может быть стоит продолжить обработку _requestData, если commandEndIndex+8 не равен длинне?
 }
 
-
 /**
- * @brief Формируем ответ об опциях
- * @param cseq - номер запроса
- */
+* @brief Формируем ответ об опциях
+* @param cseq - номер запроса
+*/
 void Server_Client::answerOPTIONS(int cseq)
 {
   QByteArray data;
@@ -193,15 +203,16 @@ void Server_Client::answerOPTIONS(int cseq)
 }
 
 /**
- * @brief Формируем ответ клиенту об описании возможных камер
- * @param cseq
- */
-void Server_Client::answerDESCRIBE(int cseq)
+* @brief Формируем ответ клиенту об описании возможных камер
+* @param cseq
+* @param trackId - айдишник конкретного трека, или -1 когда не задан явно
+*/
+void Server_Client::answerDESCRIBE(int cseq, int trackId)
 {
-  SDP * sdp = dynamic_cast<SDP*>(_server->_cameras->getTotalSDP());
-  sdp->origin.creatorName="Cameron";
-  sdp->origin.netType="IN";
-  sdp->origin.host=_server->_host;
+  SDP * sdp = dynamic_cast<SDP*>(_server->_cameras->getTotalSDP(trackId));
+  sdp->origin.creatorName = "Cameron";
+  sdp->origin.netType = "IN";
+  sdp->origin.host = _server->_host;
   sdp->origin.sessionID = 38990265062388; //TODO: Выяснить, что сюда сувать
   sdp->origin.sessionVer = 38990265062388;
 
@@ -219,27 +230,23 @@ void Server_Client::answerDESCRIBE(int cseq)
   sdpData.prepend("Content-Type: application/sdp\r\n");
   sdpData.prepend(QString("Content-Base: rtsp://%1:%2\r\n").arg(_server->_host.toString()).arg(_server->_port).toUtf8()); //-- Относительно этого адреса будут последующие запросы
 
-  answer(200, cseq, sdpData, false);
+  answer(200, cseq, sdpData, -1, false);
 }
 
 /**
- * @brief Запускаем трансляции и отвечаем
- * @param cseq
- */
-void Server_Client::answerPLAY(int cseq, int streamID)
+* @brief Запускаем трансляцию
+* @param cseq
+* @param sessionId
+*/
+void Server_Client::answerPLAY(int cseq, qint32 sessionId)
 {
   qInfo()<<"Answer PLAY";
+  if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
 
-  if ( streamID>_streamers.length() || streamID<0 ) {
-    qWarning()<<"Streamer not found O_o";
-    answer(404, cseq);
-    return;
-  }
-
-  Server_Client_Streamer * streamer = _streamers.at(streamID);
+  Server_Client_Streamer * streamer = _streamers.value(_sessions[sessionId].trackId);
 
   if ( streamer==nullptr ) {
-    qWarning()<<"Streamer was deleted O_O";
+    qWarning()<<"Streamer not exists!";
     answer(500, cseq);
     return;
   }
@@ -250,31 +257,26 @@ void Server_Client::answerPLAY(int cseq, int streamID)
     return;
   }
 
-  QByteArray data;
-  data.append(QString("Session: %1").arg(streamer->id()).append("\r\n").toUtf8());
+  QByteArray data;  
   data.append(QString("Range: npt=0.000-").append("\r\n").toUtf8());
 
-  answer(200, cseq, data);
+  answer(200, cseq, data, sessionId);
 }
 
 /**
- * @brief Убиваем соединение и отвечаем
- * @param cseq
- */
-void Server_Client::answerTEARDOWN(int cseq, int streamID)
+* @brief Убиваем соединение и отвечаем
+* @param cseq
+* @param sessionId
+*/
+void Server_Client::answerTEARDOWN(int cseq, qint32 sessionId)
 {
   qDebug()<<"Answer TEARDOWN";
+  if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
 
-  if ( (streamID<0) || (streamID>_streamers.length()) ) {
-    qWarning()<<"Stream not found O_o";
-    answer(404, cseq);
-    return;
-  }
-
-  Server_Client_Streamer * streamer = _streamers.at(streamID);
+  Server_Client_Streamer * streamer = _streamers.value(_sessions[sessionId].trackId);
 
   if ( streamer==nullptr ) {
-    qWarning()<<"Stream deleted O_O";
+    qWarning()<<"Streamer not exists!";
     answer(500, cseq);
     return;
   }
@@ -282,103 +284,123 @@ void Server_Client::answerTEARDOWN(int cseq, int streamID)
   streamer->stop();
 
   QByteArray data;
-  answer(200, cseq, data);
+  answer(200, cseq, data, sessionId);
+
+  _sessions[sessionId].trackId = -1;
 }
 
 /**
- * @brief Готовим соединение и отвечаем о готовности
- * @param cseq
- */
-void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, int camID)
+* @brief Готовим соединение
+* @param cseq
+* @param videoPort
+* @param audioPort
+* @param se
+*/
+void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, qint32 sessionId)
 {
-  qInfo()<<"Answer SETUP"<<cseq<<videoPort<<camID;
+  qInfo()<<"Answer SETUP"<<cseq<<"videoPort"<<videoPort<<"sessionId:"<<sessionId;
 
-  Cameras_Camera * camera = static_cast<Cameras_Camera*>( _server->_cameras->getCam(camID) );
+  const TSessionInfo &session = _sessions[sessionId];
+
+  Cameras_Camera * camera = static_cast<Cameras_Camera*>(_server->_cameras->getCam(session.trackId));
 
   if ( camera==nullptr ){
-    qWarning()<<"Camera not found O_o";
+    qWarning()<<"Camera with trackId"<<session.trackId<<"not found. Check request.";
     answer(404, cseq);
     return;
   }
 
   if ( !camera->go() ) {
-    qWarning()<<"Unable start camera";
+    qWarning()<<"Unable start camera. Check settings.";
     answer(500, cseq);
     return;
   }
 
-  Server_Client_Streamer * clientStreamer = new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, _streamers.length(), camera->getStreamer() );
+  Server_Client_Streamer * clientStreamer = new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, camera->id(), camera->getStreamer());
 
   connect(camera, &Cameras_Camera::errored, this, &Server_Client::onCameraErrored); //-- Если будут ошибки с камерой, нужно отреагировать
-  connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только клиент удалиться - останавливаем вещание камеры
+  connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только стример удалится - уведомляем камеру, что можно остановить вещание
 
-  _streamers.append(clientStreamer);
+  _streamers[clientStreamer->id()] = clientStreamer;
 
   QByteArray data;
-  data.append(QString("Transport: RTP/AVP;unicast;destination=%1;source=%2;client_port=%3-%4").arg(_socket->peerAddress().toString()).arg(_server->_host.toString()).arg(videoPort).arg(audioPort).append("\r\n").toUtf8());
-  data.append(QString("Session: %1").arg(clientStreamer->id()).append("\r\n").toUtf8()); //-- В сессию поставим айдишник, что бы знать в дальнейшем каким потоком управляет клиент
+  data.append(QString("Transport: RTP/AVP;unicast;destination=%1;source=%2;client_port=%3-%4\r\n").arg(
+    _socket->peerAddress().toString(),
+    _server->_host.toString(),
+    QString::number(videoPort),
+    QString::number(audioPort)).toUtf8()
+  );
 
-  answer(200, cseq, data);
+  answer(200, cseq, data, sessionId);
 }
 
-
 /**
- * @brief Отвечаем на запрос хз чего хз как
- * @param cseq
- */
-void Server_Client::answerGETPARAMETER(int cseq)
+* @brief Отвечаем на запрос хз чего хз как
+* Некоторые плееры используют получение параметра как ALIVE запрос
+* @param cseq
+*/
+void Server_Client::answerGETPARAMETER(int cseq, qint32 sessionId)
 {
   qInfo()<<"GET_PARAMETER";
-  answerAlive(cseq); //-- Некоторые плееры используют получение параметра как ALIVE запрос...
+  if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
+
+  answerAlive(cseq, sessionId);
 }
 
-
 /**
- * @brief Отлавливаем завершение стримера, и удаляем из списка
- * @param streamID
- */
+* @brief Отлавливаем стример и удаляем из списка
+* @param streamID
+*/
 void Server_Client::streamFinished(int streamID)
 {
   qDebug()<<"";
-  _streamers.takeAt(streamID);
+  _streamers.remove(streamID);
 }
 
 /**
 * @brief Отвечаем на запрос подтверждения, что клиент жив
 * @param cseq
 */
-void Server_Client::answerAlive(int cseq)
+void Server_Client::answerAlive(int cseq, qint32 sessionId)
 {
   qInfo()<<"ALIVE";
+  if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
+
   _aliveTimeOverTimer->start();
   QByteArray data;
-  answer(200, cseq, data);
+  answer(200, cseq, data, sessionId);
 }
 
-
 /**
- * @brief Отсылаем ответ клиенту
- * @param statusCode - статус
- * @param cseq - номер запроса
- * @param data - сам ответ
- * @param lastRN - нужно ли отправлять финальные \r\n
- */
-void Server_Client::answer(int statusCode, int cseq, QByteArray data, bool lastRN)
+* @brief Отсылаем ответ клиенту
+* @param statusCode - статус
+* @param cseq - номер запроса
+* @param data - сам ответ
+* @param sessionId - айдишник сессии. Если не нужен, то -1.
+* @param lastRN - нужно ли отправлять финальные \r\n
+*/
+void Server_Client::answer(int statusCode, int cseq, QByteArray data, qint32 sessionId, bool lastRN)
 {
-  if ( statusCode==200 | statusCode==1 ) {
+  if ( statusCode==200 || statusCode==1 ) {
     data.prepend(QString("Server: Cameron\r\n").toUtf8());
     data.prepend(QString("CSeq: %1\r\n").arg(cseq).toUtf8());
     data.prepend("RTSP/1.0 200 OK\r\n");
+
+    if ( sessionId>=0 ) {
+      data.append(QString("Session: %1;timeout=%2\r\n").arg(
+        QString::number(sessionId),
+        QString::number(_aliveTimeOverTimer->interval())
+      ).toUtf8());
+    }
   } else {
     data.clear();
     switch ( statusCode ) {
-      case 401: data.append("RTSP/1.0 401 Unauthorized\r\n"); break;
-      case 400: data.append("RTSP/1.0 400 Bad Request\r\n"); break;
-      case 404: data.append("RTSP/1.0 404 Not Found\r\n"); break;
-      case 500: data.append("RTSP/1.0 500 Internal Server Error\r\n"); break;
-      default: data.append("RTSP/1.0 400 Bad Request\r\n"); break;
+      case 401: { data.append("RTSP/1.0 401 Unauthorized\r\n"); break; }
+      case 400: { data.append("RTSP/1.0 400 Bad Request\r\n"); break; }
+      case 404: { data.append("RTSP/1.0 404 Not Found\r\n"); break; }
+      case 500: { data.append("RTSP/1.0 500 Internal Server Error\r\n"); break; }
+      default: { data.append("RTSP/1.0 400 Bad Request\r\n"); break; }
     }
-
     data.append(QString("Server: Cameron\r\n").toUtf8());
     data.append(QString("CSeq: %1\r\n").arg(cseq).toUtf8());
     if ( statusCode==401 ) { data.append(QString("WWW-Authenticate: Basic realm=\"Cameron\"\r\n").toUtf8()); }
@@ -401,6 +423,31 @@ void Server_Client::aliveTimeOver()
 }
 
 /**
+* @brief Создаём уникальный айдишник сессии
+* @return
+*/
+qint32 Server_Client::generateSessionId()
+{
+  qint32 sessionId = 0;
+
+  do {
+    sessionId = QRandomGenerator::global()->generate();
+  } while (_sessions.contains(sessionId));
+
+  return sessionId;
+}
+
+/**
+* @brief Проверяем, есть ли сессия
+* @param sessionId
+* @return
+*/
+bool Server_Client::checkSessionExists(qint32 sessionId)
+{
+  return _sessions.contains(sessionId);
+}
+
+/**
 * @brief Попробуем залогинить пользователя
 * @param uName
 * @param uPass
@@ -420,4 +467,3 @@ Server_Client::~Server_Client()
 {
   qDebug()<<"";
 }
-

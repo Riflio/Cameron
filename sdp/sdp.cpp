@@ -90,7 +90,7 @@ bool SDP::parse(QByteArray data)
         }
 
         //-- Решаем что делать с атрибутом
-        if ( mediaIndex!=-1 ) { //-- Если есть медиа записи, то значит относиться к ним
+        if ( mediaIndex!=-1 ) { //-- Если есть медиа записи, то значит относится к ним
           medias.at(mediaIndex)->attribytes.insert(attribute->name, attribute);
         }
       }
@@ -100,10 +100,10 @@ bool SDP::parse(QByteArray data)
 }
 
 /**
- * @brief Формируем SDP данные
- * @param data
- * @return
- */
+* @brief Формируем SDP данные
+* @param data
+* @return
+*/
 bool SDP::make(QByteArray & data)
 {
   QString rn= "\r\n";

@@ -19,24 +19,24 @@ class Server_Client_Streamer : public WThread
 {
     Q_OBJECT
 public:
-    explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  IRTSP_Stream * streamer);
-    ~Server_Client_Streamer();
+  explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  IRTSP_Stream * streamer);
+  ~Server_Client_Streamer();
 
-    void loop() override;
-    bool onStarted() override;
+  void loop() override;
+  bool onStarted() override;
 
-    int id();
+  int id();
 
 
 private:
-    QHostAddress _host;
-    int _port;
-    int _id;
+  QHostAddress _host;
+  int _port;
+  int _id;
 
-    IRTSP_Stream * _streamer;
-    QUdpSocket * _socket;
+  IRTSP_Stream * _streamer;
+  QUdpSocket * _socket;
 
-    CircleBufferReader<IRTP_Packet> * _streamerFrames;
+  CircleBufferReader<IRTP_Packet> * _streamerFrames;
 };
 
 #endif // SERVER_CLIENT_STREAMER_H

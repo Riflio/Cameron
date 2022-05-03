@@ -2,6 +2,14 @@
 
 #include <QDebug>
 
+/**
+* @brief Server_Client_Streamer::Server_Client_Streamer
+* @param parent
+* @param host
+* @param port
+* @param id - айдишник. Соответствует камере
+* @param streamer
+*/
 Server_Client_Streamer::Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id, IRTSP_Stream * streamer)
     : WThread(parent, "Client stream"), _host(host), _port(port), _id(id), _streamer(streamer)
 {

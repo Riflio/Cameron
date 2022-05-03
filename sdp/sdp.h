@@ -12,16 +12,16 @@
 */
 class SDP : public QObject, public ISDP
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit SDP(QObject *parent = nullptr);
-    virtual ~SDP();
+  explicit SDP(QObject *parent = nullptr);
+  virtual ~SDP();
 
-    bool parse(QByteArray data);
-    bool make(QByteArray & data);
+  bool parse(QByteArray data);
+  bool make(QByteArray & data);
 
-    sOrigin origin;
-    QList<sMedia*> medias;
+  sOrigin origin;
+  QList<sMedia*> medias;
 
 signals:
 

@@ -6,28 +6,27 @@
 #include "Interfaces/icameras.h"
 #include <QCoreApplication>
 
-
 /**
- * @brief Управляем списком камер
- */
+* @brief Управляем списком камер
+*/
 class Cameras : public QObject, public ICameras
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit Cameras(QObject *parent = 0);
-    virtual ~Cameras();
-    ICameras_Camera * newCam(int id);
-    ICameras_Camera * getCam(int id);
+  explicit Cameras(QObject *parent = 0);
+  virtual ~Cameras();
+  ICameras_Camera * newCam(int id) override;
+  ICameras_Camera * getCam(int id) override;
 
-    TCams getCams();
-    ISDP * getTotalSDP();
+  TCams getCams() override;
+  ISDP * getTotalSDP(int trackId) override;
 
 signals:
 
 public slots:
 
 private:
-    TCams _cams;
+  TCams _cams;
 
 };
 

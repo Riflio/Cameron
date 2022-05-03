@@ -17,44 +17,54 @@
 class Server;
 class Server_Client : public Server_Client_Info
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit Server_Client(QObject *parent =nullptr, QTcpSocket * socket =nullptr, Server * server =nullptr);
-    ~Server_Client();
+  explicit Server_Client(QObject *parent =nullptr, QTcpSocket * socket =nullptr, Server * server =nullptr);
+  ~Server_Client();
 
-    bool loginUser(QString uName, QString uPass);
+  bool loginUser(QString uName, QString uPass);
 
 signals:
-    void notAlive(int id); //-- Мы, кажется, не в сети
+  void notAlive(int id); //-- Мы, кажется, не в сети
 
 public slots:
-    void request();
-    void streamFinished(int streamID);
-    int clientID();
+  void request();
+  void streamFinished(int streamID);
+  int clientID();
 
 private slots:
-    void onCameraErrored();
+  void onCameraErrored();
 
 private:
-    QTcpSocket * _socket;
-    Server * _server;
-    int _id;
+  QTcpSocket * _socket;
+  Server * _server;
+  int _id;
 
-    void answerAlive(int cseq);
-    void answerOPTIONS(int cseq);
-    void answerDESCRIBE(int cseq);
-    void answerPLAY(int cseq, int streamID);    
-    void answerTEARDOWN(int cseq, int streamID);
-    void answerSETUP(int cseq, int videoPort, int audioPort, int camID);
-    void answerGETPARAMETER(int cseq);
-    void answer(int statusCode, int cseq =0, QByteArray data ="", bool lastRN =true);
+  void answerAlive(int cseq, qint32 sessionId);
+  void answerOPTIONS(int cseq);
+  void answerDESCRIBE(int cseq, int trackId);
+  void answerPLAY(int cseq, qint32 sessionId);
+  void answerTEARDOWN(int cseq, qint32 sessionId);
+  void answerSETUP(int cseq, int videoPort, int audioPort, qint32 sessionId);
+  void answerGETPARAMETER(int cseq, qint32 sessionId);
+  void answer(int statusCode, int cseq =0, QByteArray data ="", qint32 sessionId =-1, bool lastRN =true);
 
-    QList<Server_Client_Streamer*> _streamers; //-- Список стримеров, которые запустил этот клиент
+  QMap<int, Server_Client_Streamer*> _streamers; //-- <cameraId, Server_Client_Streamer*> Стримеры, которые запустил этот клиент
 
-    void aliveTimeOver();
-    QTimer * _aliveTimeOverTimer;
+  void aliveTimeOver();
+  QTimer * _aliveTimeOverTimer;
 
-    QString _requestData;
+  QString _requestData;
+
+  typedef struct SessionInfo {
+    int trackId =-1;
+  } TSessionInfo;
+
+  static QMap<qint32, TSessionInfo> _sessions;
+  static qint32 generateSessionId();
+
+  inline bool checkSessionExists(qint32 sessionId);
+
 };
 
 #endif // RTSP_CLIENT_H
