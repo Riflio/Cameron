@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += network core sql
+QT += network core
 
 CONFIG += c++11
 CONFIG -= app_bundle
