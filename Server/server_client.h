@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QTcpSocket>
-#include <QRegExp>
 #include <QUrl>
 #include "Camera/cameras.h"
 #include "Server/server_client_streamer.h"

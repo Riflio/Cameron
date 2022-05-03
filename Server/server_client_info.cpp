@@ -8,7 +8,7 @@ Server_Client_Info::Server_Client_Info(QObject *parent) :
 
 QString Server_Client_Info::getName()
 {
-    return _name;
+  return _name;
 }
 
 /**
@@ -17,7 +17,7 @@ QString Server_Client_Info::getName()
 */
 bool Server_Client_Info::isActual()
 {
-    return _actual;
+  return _actual;
 }
 
 /**
@@ -27,12 +27,11 @@ bool Server_Client_Info::isActual()
 */
 bool Server_Client_Info::setInfo(QString name, QString passHash)
 {
-    if (name=="" || passHash=="")  return false;
-    _name = name;
-    _passHash = passHash;
-    _actual = true;
-
-    return true;
+  if ( name=="" || passHash=="" ) { return false; }
+  _name = name;
+  _passHash = passHash;
+  _actual = true;
+  return true;
 }
 
 /**
@@ -43,8 +42,7 @@ bool Server_Client_Info::setInfo(QString name, QString passHash)
 */
 bool Server_Client_Info::checkPass(QString uPass, QString passHash)
 {
-    if ( passHash.isEmpty() ) { return false; }
-    if ( passHash!=QCryptographicHash::hash(uPass.toUtf8(), QCryptographicHash::Md5).toHex()) { return false; }
-
-    return true;
+  if ( passHash.isEmpty() ) { return false; }
+  if ( passHash!=QCryptographicHash::hash(uPass.toUtf8(), QCryptographicHash::Md5).toHex()) { return false; }
+  return true;
 }

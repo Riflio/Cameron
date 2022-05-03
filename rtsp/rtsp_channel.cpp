@@ -7,15 +7,15 @@ namespace NS_RSTP {
 RTSP_Channel::RTSP_Channel(QObject * parent, RTSP * rtsp)
     : QObject(parent), _connect(rtsp), _id(_connect->channelsCount()), _session(0), _streamer(nullptr), _alived(false)
 {
-    qDebug()<<"RTSP_Channel created!";
-    _streamer = new RTSP_Stream(this);
-    connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
-    connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
-    connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
+  qDebug()<<"RTSP_Channel created!";
+  _streamer = new RTSP_Stream(this);
+  connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
+  connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
+  connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
 
-    _aliveTimer = new QTimer(this);
-    _aliveTimer->setInterval(50000);
-    connect(_aliveTimer, &QTimer::timeout, this, &RTSP_Channel::alive);
+  _aliveTimer = new QTimer(this);
+  _aliveTimer->setInterval(50000);
+  connect(_aliveTimer, &QTimer::timeout, this, &RTSP_Channel::alive);
 }
 
 /**
@@ -24,10 +24,9 @@ RTSP_Channel::RTSP_Channel(QObject * parent, RTSP * rtsp)
 */
 void RTSP_Channel::setup(int port)
 {
-    qInfo()<<"setup"<<port;
-    _streamer->setPort(port);
-
-    _connect->setup(id(), port);
+  qInfo()<<"setup"<<port;
+  _streamer->setPort(port);
+  _connect->setup(id(), port);
 }
 
 /**
@@ -35,14 +34,12 @@ void RTSP_Channel::setup(int port)
 */
 void RTSP_Channel::play()
 {
-    qInfo()<<"play";
-
-    if ( _aliveTimer->isActive() ) return; //-- Мы уже запущены
-
-    _streamer->start(QThread::HighPriority);
-    _alived = true;
-    _aliveTimer->start();
-    _connect->play(id());
+  qInfo()<<"play";
+  if ( _aliveTimer->isActive() ) { return; } //-- Мы уже запущены
+  _streamer->start(QThread::HighPriority);
+  _alived = true;
+  _aliveTimer->start();
+  _connect->play(id());
 }
 
 /**
@@ -50,16 +47,14 @@ void RTSP_Channel::play()
 */
 void RTSP_Channel::alive()
 {
-    qInfo()<<"alive";
-
-    //-- Если с момента предыдущего запроса не было подтверждения ответа, то значит, что умерли (сеть или хз)
-    if ( !_alived ) {
-        _aliveTimer->stop();
-        emit errored();
-        return;
-    }
-    _alived = false;
-    _connect->alive(id());
+  qInfo()<<"alive";
+  if ( !_alived ) { //-- Если с момента предыдущего запроса не было подтверждения ответа, то значит, что умерли (сеть или хз)
+    _aliveTimer->stop();
+    emit errored();
+    return;
+  }
+  _alived = false;
+  _connect->alive(id());
 }
 
 /**
@@ -67,7 +62,7 @@ void RTSP_Channel::alive()
 */
 void RTSP_Channel::alived()
 {
-    _alived = true;
+  _alived = true;
 }
 
 /**
@@ -75,8 +70,8 @@ void RTSP_Channel::alived()
 */
 void RTSP_Channel::onStreamError()
 {
-    qDebug()<<"";
-    emit errored();
+  qDebug()<<"";
+  emit errored();
 }
 
 /**
@@ -84,39 +79,38 @@ void RTSP_Channel::onStreamError()
 */
 void RTSP_Channel::teardown()
 {    
-    if ( !_aliveTimer->isActive() ) { return; } //-- Если мы не были запущены
-    qInfo()<<"teardown";
+  if ( !_aliveTimer->isActive() ) { return; } //-- Если мы не были запущены
+  qInfo()<<"teardown";
 
-    _aliveTimer->stop();
-    _connect->teardown(id());
+  _aliveTimer->stop();
+  _connect->teardown(id());
 }
-
 
 int RTSP_Channel::id()
 {
-    return _id;
+  return _id;
 }
 
 long RTSP_Channel::session()
 {
-    return _session;
+  return _session;
 }
 
 SDP::sMedia * RTSP_Channel::sdpMedia()
 {
-    return _sdpMedia;
+  return _sdpMedia;
 }
 
 RTSP_Stream * RTSP_Channel::getStreamer()
 {
-    return _streamer;
+  return _streamer;
 }
 
 
 RTSP_Channel::~RTSP_Channel()
 {
-    teardown();
-    qDebug()<<"";
+  teardown();
+  qDebug()<<"";
 }
 
 }

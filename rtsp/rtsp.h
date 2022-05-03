@@ -6,7 +6,6 @@
 
 #include <QTcpSocket>
 #include <QUrl>
-#include <QRegExp>
 
 #include "rtsp_channel.h"
 #include "sdp/sdp.h"

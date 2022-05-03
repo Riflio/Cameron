@@ -36,6 +36,7 @@ signals:
 
 private slots:
     void goError();
+    void onReadyRead();
 
 private:
     int _port;

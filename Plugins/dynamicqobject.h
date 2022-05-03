@@ -30,6 +30,7 @@ private:
     bool containsSlot(const QString &name);
     QObject *m_mapTo;
     const char *m_catchMethod;
+
     typedef struct {
         bool isEmpty; // true after removeSlot()
         QObject *object;
@@ -48,6 +49,7 @@ private:
         QVector<int> parameterTypes;
         int retType;
     } signal_t;
+
     QVector<signal_t> m_signalList;
     QMultiHash<QString, int> m_signalHash;
 };

@@ -79,13 +79,13 @@ bool DynamicQObject::addSlot(QObject *object, const char *signal, const QString 
 int DynamicQObject::qt_metacall(QMetaObject::Call call, int id, void **arguments)
 {
     id = QObject::qt_metacall(call, id, arguments);
-    if (id < 0 || call != QMetaObject::InvokeMetaMethod) return id;
+    if ( id<0 || call!=QMetaObject::InvokeMetaMethod ) { return id; }
     Q_ASSERT(id < m_slotList.size());
     const slot_t &slotInfo = m_slotList[id];
     QVariantList parameters;
-    for (int i = 0; i < slotInfo.parameterTypes.count(); ++i) {
-        void *parameter = arguments[i + 1];
-        parameters.append(QVariant(slotInfo.parameterTypes[i], parameter));
+    for (int i=0; i<slotInfo.parameterTypes.count(); ++i) {
+        void *parameter = arguments[i+1];
+        parameters.append(QVariant(QMetaType(slotInfo.parameterTypes[i]), parameter));
     }
     QMetaObject::invokeMethod(m_mapTo, m_catchMethod, Q_ARG(QString, slotInfo.name), Q_ARG(QVariantList, parameters));
     return -1;
@@ -200,8 +200,8 @@ QVariantList DynamicQObject::activate(const QString &signalName, const QVariantL
 
         QMetaObject::activate(this, metaObject(), signalIdx + metaObject()->methodCount(), m_parameters);
 
-        if (signal.retType!=43) { // void return type
-            QVariant v(signal.retType, m_parameters[0]);
+        if ( signal.retType!=43 ) { // void return type
+            QVariant v(QMetaType(signal.retType), m_parameters[0]);
             rets.append(v);
         }
 

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <cameron>
 		
-	<server host="127.0.0.1" port="2666" >  <!--Connect url: "rtsp://admin:pass@127.0.0.1:2666/track/1" -->
+	<server host="127.0.0.1" port="2666" >  <!--Connect url: "rtsp://admin:178900@127.0.0.1:2666/track/1" -->
 
 	<users>
-		<user login="admin" pass="1a1dc91c907325c69271ddf0c944bc72"></user> <!--MD5:pass-->
+		<user login="admin" pass="1c51e941db668be21f34d72f3eef0484"></user> <!--MD5:pass-->
 		<user login="user1" pass="1"></user>
 		<user login="user2" pass="2"></user>
 	</users>		

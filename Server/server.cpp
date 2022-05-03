@@ -4,21 +4,21 @@
 Server::Server(QObject *parent)
     :QObject(parent)
 {
-    _server = new QTcpServer(this);
-    connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
-    connect(_server, &QTcpServer::serverError, this, &Server::serverError);
+  _server = new QTcpServer(this);
+  connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
+  connect(_server, &QTcpServer::acceptError, this, &Server::serverError);
 }
 
 bool Server::setSettings(QString host, int port)
 {
-    _host = host;
-    _port = port;
-    return true;
+  _host = QHostAddress(host);
+  _port = port;
+  return true;
 }
 
 void Server::setCams(ICameras * cameras)
 {
-    _cameras = cameras;
+  _cameras = cameras;
 }
 
 /**
@@ -27,18 +27,14 @@ void Server::setCams(ICameras * cameras)
 */
 bool Server::startServer()
 {
-    qInfo()<<"Start server at"<<_host<<_port;
-
-    if ( !_server->listen(_host, _port) ) {
-        qWarning()<<_server->errorString();
-        return false;
-    }
-
-    qInfo()<<"Server started";
-
-    emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
-
-    return true;
+  qInfo()<<"Start server at"<<_host<<_port;
+  if ( !_server->listen(_host, _port) ) {
+    qWarning()<<_server->errorString();
+    return false;
+  }
+  qInfo()<<"Server started";
+  emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
+  return true;
 }
 
 /**
@@ -46,16 +42,11 @@ bool Server::startServer()
 */
 void Server::newClient()
 {
-    qInfo()<<"New client";
-
-    Server_Client * client = new Server_Client(this, _server->nextPendingConnection(), this);
-
-    emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
-
-    connect(client, &Server_Client::notAlive, this, &Server::delClient);
-
-    _clients.insert(client->clientID(), client);
-
+  qInfo()<<"New client";
+  Server_Client * client = new Server_Client(this, _server->nextPendingConnection(), this);
+  emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
+  connect(client, &Server_Client::notAlive, this, &Server::delClient);
+  _clients.insert(client->clientID(), client);
 }
 
 /**
@@ -63,20 +54,17 @@ void Server::newClient()
 */
 void Server::delClient(int clientID)
 {
-    if ( !_clients.contains(clientID) ) return;
-
-    qInfo()<<"Client disconnected"<<clientID;
-
-    emit Events->doAction("DelClient", QVariantList()<<clientID);
-
-    _clients.value(clientID)->deleteLater();
-    _clients.remove(clientID);
+  if ( !_clients.contains(clientID) ) return;
+  qInfo()<<"Client disconnected"<<clientID;
+  emit Events->doAction("DelClient", QVariantList()<<clientID);
+  _clients.value(clientID)->deleteLater();
+  _clients.remove(clientID);
 }
 
 void Server::serverError()
 {
-    qWarning()<<"Server error!"<<_server->errorString();
-    emit Events->doAction("ServerError", QVariantList());
+  qWarning()<<"Server error!"<<_server->errorString();
+  emit Events->doAction("ServerError", QVariantList());
 }
 
 /**
@@ -85,13 +73,12 @@ void Server::serverError()
 */
 bool Server::userHasAccess(Server_Client * client) //TODO: Сделать
 {
-
-    return true;
+  return true;
 }
 
 ICameras * Server::getCams()
 {
-    return _cameras;
+  return _cameras;
 }
 
 /**
@@ -101,17 +88,17 @@ ICameras * Server::getCams()
 */
 void Server::addAvaliableUser(QString name, QString pass)
 {
-    _avaliableUsers[name]=pass;
+  _avaliableUsers[name]=pass;
 }
 
 QHostAddress Server::host() const
 {
-    return _host;
+  return _host;
 }
 
 int Server::port() const
 {
-    return _port;
+  return _port;
 }
 
 Server::~Server()
