@@ -3,32 +3,34 @@
 
 #include "Interfaces/irtp_packet.h"
 #include <QByteArray>
-
-
-class RTP_packet: public IRTP_Packet
+#include <QDebug>
+/**
+* @brief Пакет RTP
+*/
+class RTP_Packet: public IRTP_Packet
 {
 public:
-    RTP_packet();
-    virtual ~RTP_packet() {}
+  RTP_Packet(const QByteArray &data);
+  virtual ~RTP_Packet() {}
 
-    int getPayloadStart() const;
-    int getPayloadLength() const;
+  int getPayloadStart() const;
+  int getPayloadLength() const;
 
-    bool hasPadding() const;
+  bool hasPadding() const;
 
-    BYTE getCC() const;
-    unsigned int getTimeStamp() const;
-    unsigned short getSequence() const;
-    const int RTP_HEADER_SIZE = 12;
+  BYTE getCC() const;
+  unsigned int getTimeStamp() const;
+  unsigned short getSequence() const;
+  const int RTP_HEADER_SIZE = 12;
 
-    QByteArray data() const;
-    void setData(const QByteArray &data);
+  QByteArray data() const;
+  void setData(const QByteArray &data);
 
-    RTP_packet& operator=(const QByteArray & data);
-    RTP_packet& operator=(const RTP_packet & packet);
+  RTP_Packet& operator=(const QByteArray &data);
+  RTP_Packet& operator=(const RTP_Packet &packet);
 
 private:
-    QByteArray _data;
+  QByteArray _data;
 
 };
 

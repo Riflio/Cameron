@@ -6,41 +6,42 @@
 #include <QUdpSocket>
 #include <QTimer>
 
+#include "Interfaces/irtp_packet.h"
 #include "Plugins/wthread.h"
 #include "Interfaces/irtsp_stream.h"
-#include "rtp/rtp.h"
 
 namespace NS_RSTP {
 
 /**
 * @brief Общий для стримеров, сдесь собираем готовые фреймы из RTP пакетов
 */
-class RTSP_Stream: public WThread, public RTP, public IRTSP_Stream
+class RTSP_Stream: public WThread, public virtual IRTSP_Stream
 {    
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit RTSP_Stream(QObject * parent);
-    ~RTSP_Stream();
+  explicit RTSP_Stream(QObject * parent);
+  ~RTSP_Stream();
 
-    void setPort(int port);
+  void setPort(int port);
 
-    void loop() override;
-    bool onStarted() override;
-    void onFinished() override;
+  void loop() override;
+  bool onStarted() override;
+  void onFinished() override;
 
 
 signals:
-    void connected();
-    void disconnected();
-    void errored();
+  void connected();
+  void disconnected();
+  void errored();
+  void newPacketAvaliable(QSharedPointer<IRTP_Packet> packet) override;
 
 private slots:
-    void goError();
-    void onReadyRead();
+  void goError();
+  void onReadyRead();
 
 private:
-    int _port;
-    QUdpSocket * _socket;
+  int _port;
+  QUdpSocket * _socket;
 
 };
 

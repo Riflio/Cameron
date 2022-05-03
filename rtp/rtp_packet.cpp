@@ -1,79 +1,78 @@
 #include "rtp_packet.h"
 
-RTP_packet::RTP_packet()
+RTP_Packet::RTP_Packet(const QByteArray &data): _data(data)
 {
 
 }
 
-QByteArray RTP_packet::data() const
+QByteArray RTP_Packet::data() const
 {
-    return _data;
+  return _data;
 }
 
-void RTP_packet::setData(const QByteArray &data)
+void RTP_Packet::setData(const QByteArray &data)
 {
-    _data = data;
+  _data = data;
 }
 
-RTP_packet &RTP_packet::operator=(const QByteArray &data)
+RTP_Packet &RTP_Packet::operator=(const QByteArray &data)
 {
-    _data = data;
-    return *this;
+  _data = data;
+  return *this;
 }
 
-RTP_packet &RTP_packet::operator=(const RTP_packet &packet)
+RTP_Packet &RTP_Packet::operator=(const RTP_Packet &packet)
 {
-    _data = packet._data;
-    return *this;
+  _data = packet._data;
+  return *this;
 }
 
-int RTP_packet::getPayloadStart() const
+int RTP_Packet::getPayloadStart() const
 {
-    return RTP_HEADER_SIZE + getCC() * 4;
+  return RTP_HEADER_SIZE + getCC() * 4;
 }
 
-int RTP_packet::getPayloadLength() const
+int RTP_Packet::getPayloadLength() const
 {
-    return _data.length() - getPayloadStart();
+  return _data.length() - getPayloadStart();
 }
 
 /**
 * @brief Количество CSRC идентификаторов
 * @return
 */
-BYTE RTP_packet::getCC() const
+BYTE RTP_Packet::getCC() const
 {
-    BYTE c = (BYTE)((_data[0]) & 0x0f);
-    return  c;
+  BYTE c = (BYTE)((_data[0]) & 0x0f);
+  return  c;
 }
 
-bool RTP_packet::hasPadding() const
+bool RTP_Packet::hasPadding() const
 {
-    return ((_data[0] & 0x20) >> 5) == 1;
+  return ((_data[0] & 0x20) >> 5) == 1;
 }
 
-unsigned int RTP_packet::getTimeStamp() const
+unsigned int RTP_Packet::getTimeStamp() const
 {    
-    int idx = 4; //-- С какой позиции начиная
+  int idx = 4; //-- С какой позиции начиная
 
-    //-- Собираем 4 байта в int
-    unsigned int i = (((_data[idx] << 24) & 0xFF000000L)
-        | ((_data[idx + 1] << 16) & 0xFF0000L)
-        | (_data[idx + 2] << 8 & 0xFF00L)
-        | (_data[idx + 3] & 0xFFL));
+  //-- Собираем 4 байта в int
+  unsigned int i = (((_data[idx] << 24) & 0xFF000000L)
+    | ((_data[idx + 1] << 16) & 0xFF0000L)
+    | (_data[idx + 2] << 8 & 0xFF00L)
+    | (_data[idx + 3] & 0xFFL));
 
-    return i;
+  return i;
 }
 
 
-unsigned short RTP_packet::getSequence() const
+unsigned short RTP_Packet::getSequence() const
 {
-    unsigned short s;
+  unsigned short s;
+  int idx = 2; //-- С какой позиции начиная
 
-    int idx = 2; //-- С какой позиции начиная
+  //-- Собираем 2 байта в unsigned short
+  s = (((_data[idx] << 8) & 0xFF00) | (_data[idx+1] & 0xFF));
 
-    //-- Собираем 2 байта в unsigned short
-    s = (((_data[idx] << 8) & 0xFF00) | (_data[idx+1] & 0xFF));
-
-    return s;
+  return s;
 }

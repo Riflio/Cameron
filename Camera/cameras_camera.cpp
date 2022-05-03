@@ -155,6 +155,8 @@ bool Cameras_Camera::stop()
     _status = S_NONE;
   }
 
+  _clientsCount = 0;
+
   return true;
 }
 

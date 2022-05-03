@@ -1,9 +1,10 @@
 #include "rtsp_stream.h"
+#include "rtp/rtp_packet.h"
 #include <QDebug>
 
 namespace NS_RSTP {
 
-RTSP_Stream::RTSP_Stream(QObject * parent) : WThread(parent, "RTSP stream"), RTP(), _socket(nullptr)
+RTSP_Stream::RTSP_Stream(QObject * parent) : WThread(parent, "RTSP stream"), _socket(nullptr)
 {
 
 }
@@ -26,7 +27,8 @@ void RTSP_Stream::onReadyRead()
     QByteArray data;
     data.resize(_socket->pendingDatagramSize());
     _socket->readDatagram(data.data(), data.size() );
-    newPacket(data);
+
+    emit newPacketAvaliable(QSharedPointer<IRTP_Packet>(new RTP_Packet(data)));
   }
 }
 

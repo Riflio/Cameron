@@ -6,10 +6,7 @@
 #include <QThread>
 #include <QTimer>
 
-
 #include "sdp/sdp.h"
-#include "rtp/rtp.h"
-
 #include "rtsp/rtsp_stream.h"
 
 namespace NS_RSTP {

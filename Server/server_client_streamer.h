@@ -7,8 +7,7 @@
 
 #include "Plugins/wthread.h"
 #include "Camera/cameras_camera.h"
-
-#include "Assets/circleBufferReader.h"
+#include "Interfaces/irtp_packet.h"
 
 #include <QTimer>
 
@@ -27,16 +26,16 @@ public:
 
   int id();
 
+private slots:
+  void onNewPacketAvaliable(QSharedPointer<IRTP_Packet> packet);
 
 private:
   QHostAddress _host;
   int _port;
   int _id;
 
-  IRTSP_Stream * _streamer;
-  QUdpSocket * _socket;
-
-  CircleBufferReader<IRTP_Packet> * _streamerFrames;
+  IRTSP_Stream * _streamer =nullptr;
+  QUdpSocket * _socket =nullptr;
 };
 
 #endif // SERVER_CLIENT_STREAMER_H

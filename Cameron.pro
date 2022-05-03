@@ -8,7 +8,6 @@ CONFIG -= app_bundle
 
 SOURCES += main.cpp \
     Plugins/wthread.cpp \
-    rtp/rtp.cpp \
     rtsp/rtsp.cpp \
     rtsp/rtsp_channel.cpp \
     rtsp/rtsp_stream.cpp \
@@ -27,14 +26,9 @@ SOURCES += main.cpp \
     Server/server_client_info.cpp
 
 HEADERS += \
-    Assets/circleBufferReader.h \
-    Assets/circleBufferWriter.h \
     Interfaces/IBuffer.h \
-    Interfaces/ICircleBufferReader.h \
-    Interfaces/ICircleBufferWriter.h \
     Plugins/defines.h \
     Plugins/wpropertyinterface.h \
-    rtp/rtp.h \
     rtsp/rtsp.h \
     rtsp/rtsp_channel.h \
     rtsp/rtsp_stream.h \
@@ -57,7 +51,6 @@ HEADERS += \
     Interfaces/icameras.h \
     Interfaces/isdp.h \
     Interfaces/irtsp_stream.h \
-    Interfaces/irtp.h \
     Interfaces/ithread.h \
     rtp/rtp_packet.h \
     Interfaces/irtp_packet.h \
