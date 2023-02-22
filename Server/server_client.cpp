@@ -226,7 +226,7 @@ void Server_Client::answerDESCRIBE(int cseq, int trackId)
   int sdpSize = sdpData.size();
 
   sdpData.prepend("\r\n");
-  sdpData.prepend(QString("Content-Length: %1\r\n").arg( sdpSize ).toUtf8());
+  sdpData.prepend(QString("Content-Length: %1\r\n").arg(sdpSize).toUtf8());
   sdpData.prepend("Content-Type: application/sdp\r\n");
   sdpData.prepend(QString("Content-Base: rtsp://%1:%2\r\n").arg(_server->_host.toString()).arg(_server->_port).toUtf8()); //-- Относительно этого адреса будут последующие запросы
 
@@ -389,7 +389,7 @@ void Server_Client::answer(int statusCode, int cseq, QByteArray data, quint32 se
     if ( sessionId>0 ) {
       data.append(QString("Session: %1;timeout=%2\r\n").arg(
         QString::number(sessionId),
-        QString::number(_aliveTimeOverTimer->interval())
+        QString::number(_aliveTimeOverTimer->interval()/1000*0.8) //-- Интервал в секундах и возьмём с небольшим запасом
       ).toUtf8());
     }
   } else {
