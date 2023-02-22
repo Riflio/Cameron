@@ -2,7 +2,7 @@
 #include <QRegularExpression>
 #include <QDebug>
 
-SDP::SDP(QObject *parent) : QObject(parent)
+SDP::SDP(QObject *parent): QObject(parent)
 {
 
 }
