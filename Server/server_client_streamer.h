@@ -25,6 +25,8 @@ public:
   bool onStarted() override;
 
   int id();
+  uint32_t blockSize();
+  void setBlockSize(uint32_t blockSize);
 
 private slots:
   void onNewPacketAvaliable(QSharedPointer<IRTP_Packet> packet);
@@ -36,6 +38,9 @@ private:
 
   IRTSP_Stream * _streamer =nullptr;
   QUdpSocket * _socket =nullptr;
+
+  uint32_t _blockSize =1400; //-- Максимальный размер пакета, что бы влез в MTU
+  uint16_t _sequence =0; //-- Будем использовать свою нумерацию пакетов //FIXME: Random init
 };
 
 #endif // SERVER_CLIENT_STREAMER_H

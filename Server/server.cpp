@@ -1,8 +1,7 @@
 #include "server.h"
 #include <QDebug>
 
-Server::Server(QObject *parent)
-    :QObject(parent)
+Server::Server(QObject *parent): QObject(parent)
 {
   _server = new QTcpServer(this);
   connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
@@ -11,14 +10,14 @@ Server::Server(QObject *parent)
 
 bool Server::setSettings(QString host, int port)
 {
-  _host = QHostAddress(host);
-  _port = port;
+  _host =QHostAddress(host);
+  _port =port;
   return true;
 }
 
 void Server::setCams(ICameras * cameras)
 {
-  _cameras = cameras;
+  _cameras =cameras;
 }
 
 /**
@@ -43,7 +42,7 @@ bool Server::startServer()
 void Server::newClient()
 {
   qInfo()<<"New client";
-  Server_Client * client = new Server_Client(this, _server->nextPendingConnection(), this);
+  Server_Client *client =new Server_Client(this, _server->nextPendingConnection(), this);
   emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
   connect(client, &Server_Client::notAlive, this, &Server::delClient);
   _clients.insert(client->clientID(), client);
@@ -76,7 +75,7 @@ bool Server::userHasAccess(Server_Client * client) //TODO: Сделать
   return true;
 }
 
-ICameras * Server::getCams()
+ICameras *Server::getCams()
 {
   return _cameras;
 }
@@ -88,7 +87,7 @@ ICameras * Server::getCams()
 */
 void Server::addAvaliableUser(QString name, QString pass)
 {
-  _avaliableUsers[name]=pass;
+  _avaliableUsers[name] =pass;
 }
 
 QHostAddress Server::host() const
@@ -99,6 +98,24 @@ QHostAddress Server::host() const
 int Server::port() const
 {
   return _port;
+}
+
+/**
+* @brief Отдаём дефолтный максимальный размер пакета, что бы влез в MTU, см. Server_Client_Streamer::onNewPacketAvaliable
+* @return
+*/
+uint32_t Server::blockSize() const
+{
+  return _blockSize;
+}
+
+/**
+* @brief Задаём дефолтный максимальный размер пакета, что бы влез в MTU, см. Server_Client_Streamer::onNewPacketAvaliable
+* @param blockSize
+*/
+void Server::setBlockSize(uint32_t blockSize)
+{
+  _blockSize =qMax(200U, blockSize);
 }
 
 Server::~Server()

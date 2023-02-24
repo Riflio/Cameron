@@ -38,7 +38,8 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
       } else
       if ( xml.name()==QStringLiteral("server") ) {
         QXmlStreamAttributes attributes = xml.attributes();
-        server->setSettings( attributes.value("host").toString(), attributes.value("port").toInt() );
+        server->setSettings(attributes.value("host").toString(), attributes.value("port").toInt());
+        if ( attributes.hasAttribute("blockSize") ) { server->setBlockSize(attributes.value("blockSize").toUInt()); }
       } else
       if ( xml.name()==QStringLiteral("plugins") ) {
         QXmlStreamAttributes attributes = xml.attributes();

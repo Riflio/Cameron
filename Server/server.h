@@ -7,7 +7,6 @@
 #include "server_client.h"
 
 #include "Camera/cameras.h"
-
 #include "Plugins/PluginEventsWrapper.h"
 
 /**
@@ -15,42 +14,45 @@
 */
 class Server : public QObject, public IServer
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit Server(QObject *parent = nullptr);
-    virtual ~Server();
-    bool setSettings(QString host, int port);
+  explicit Server(QObject *parent =nullptr);
+  virtual ~Server();
+  bool setSettings(QString host, int port);
 
-    void setCams(ICameras * cameras);
-    ICameras * getCams();
+  void setCams(ICameras *cameras);
+  ICameras *getCams();
 
-    void addAvaliableUser(QString name, QString pass);
+  void addAvaliableUser(QString name, QString pass);
 
-    QHostAddress host() const;
-    int port() const;
+  QHostAddress host() const;
+  int port() const;
+
+  uint32_t blockSize() const;
+  void setBlockSize(uint32_t blockSize);
 
 signals:
 
 public slots:
-    bool startServer();
+  bool startServer();
 
 private slots:
-    void newClient();
-    void delClient(int clientID=-1);
-    void serverError();
+  void newClient();
+  void delClient(int clientID =-1);
+  void serverError();
 
 private:
-    QTcpServer * _server;
-    QHash<int, Server_Client*> _clients;
-    QHostAddress _host;
-    int _port;
-    ICameras * _cameras;
+  QTcpServer *_server =nullptr;
+  QHash<int, Server_Client*> _clients;
+  QHostAddress _host;
+  int _port;
+  ICameras *_cameras =nullptr;
+  uint32_t _blockSize =1400; //-- Дефолтный максимальный размер пакета, что бы влез в MTU, см. Server_Client_Streamer::onNewPacketAvaliable
+  QHash<QString, QString> _avaliableUsers;
 
-    bool userHasAccess(Server_Client *);
+  bool userHasAccess(Server_Client *);
 
-    QHash<QString, QString> _avaliableUsers;
-
-    friend Server_Client;
+  friend Server_Client;
 };
 
 #endif // SERVER_H

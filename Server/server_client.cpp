@@ -106,7 +106,7 @@ void Server_Client::request()
   }
 
   //-- Айдишник сессии
-  quint32 sessionId = dataParams.value("Session", "-1").toUInt();
+  uint32_t sessionId =dataParams.value("Session", "-1").toUInt();
 
   //== Обрабатываем запрос ==//
 
@@ -147,7 +147,7 @@ void Server_Client::request()
 
     QRegularExpressionMatch rxClientPortsMatch = rxClientPorts.match(transport);
     if ( !rxClientPortsMatch.hasMatch() ) {
-      qWarning()<<"No set client_port";
+      qWarning()<<"Not set client_port";
       answer(400, cseq);
       return;
     }
@@ -161,9 +161,9 @@ void Server_Client::request()
     //-- Каждый setup это своя сессия
     quint32 sessionId = generateSessionId();
     TSessionInfo sessionInfo;
-    sessionInfo.trackId = trackID;
-    _sessions[sessionId] = sessionInfo;
-
+    sessionInfo.trackId =trackID;
+    sessionInfo.blockSize =dataParams.value("Blocksize", QString::number(_server->blockSize())).toUInt(); //-- Максимальный размер пакета, что бы влез в MTU, см. Server_Client_Streamer::onNewPacketAvaliable
+    _sessions[sessionId] =sessionInfo;
     answerSETUP(cseq, rxClientPortsMatch.captured(1).toInt(), rxClientPortsMatch.captured(2).toInt(), sessionId);
     return;
   }
@@ -238,7 +238,7 @@ void Server_Client::answerDESCRIBE(int cseq, int trackId)
 * @param cseq
 * @param sessionId
 */
-void Server_Client::answerPLAY(int cseq, quint32 sessionId)
+void Server_Client::answerPLAY(int cseq, uint32_t sessionId)
 {
   qInfo()<<"Answer PLAY";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -268,7 +268,7 @@ void Server_Client::answerPLAY(int cseq, quint32 sessionId)
 * @param cseq
 * @param sessionId
 */
-void Server_Client::answerTEARDOWN(int cseq, quint32 sessionId)
+void Server_Client::answerTEARDOWN(int cseq, uint32_t sessionId)
 {
   qDebug()<<"Answer TEARDOWN";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -296,13 +296,13 @@ void Server_Client::answerTEARDOWN(int cseq, quint32 sessionId)
 * @param audioPort
 * @param se
 */
-void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, quint32 sessionId)
+void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, uint32_t sessionId)
 {
   qInfo()<<"Answer SETUP"<<cseq<<"videoPort"<<videoPort<<"sessionId:"<<sessionId;
 
-  const TSessionInfo &session = _sessions[sessionId];
+  const TSessionInfo &session =_sessions[sessionId];
 
-  Cameras_Camera * camera = static_cast<Cameras_Camera*>(_server->_cameras->getCam(session.trackId));
+  Cameras_Camera *camera =static_cast<Cameras_Camera*>(_server->_cameras->getCam(session.trackId));
 
   if ( camera==nullptr ){
     qWarning()<<"Camera with trackId"<<session.trackId<<"not found. Check request.";
@@ -316,12 +316,13 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, quint32 
     return;
   }
 
-  Server_Client_Streamer * clientStreamer = new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, camera->id(), camera->getStreamer());
+  Server_Client_Streamer *clientStreamer =new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, camera->id(), camera->getStreamer());
+  clientStreamer->setBlockSize(session.blockSize);
 
   connect(camera, &Cameras_Camera::errored, this, &Server_Client::onCameraErrored); //-- Если будут ошибки с камерой, нужно отреагировать
-  connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только стример удалится - уведомляем камеру, что можно остановить вещание
+  connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только стример удалится - уведомляем камеру, что можно попробовать остановить вещание
 
-  _streamers[clientStreamer->id()] = clientStreamer;
+  _streamers[clientStreamer->id()] =clientStreamer;
 
   QByteArray data;
   data.append(QString("Transport: RTP/AVP;unicast;destination=%1;source=%2;client_port=%3-%4\r\n").arg(
@@ -361,7 +362,7 @@ void Server_Client::streamFinished(int streamID)
 * @brief Отвечаем на запрос подтверждения, что клиент жив
 * @param cseq
 */
-void Server_Client::answerAlive(int cseq, quint32 sessionId)
+void Server_Client::answerAlive(int cseq, uint32_t sessionId)
 {
   qInfo()<<"ALIVE";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
@@ -379,7 +380,7 @@ void Server_Client::answerAlive(int cseq, quint32 sessionId)
 * @param sessionId - айдишник сессии. Если не нужен, то -1.
 * @param lastRN - нужно ли отправлять финальные \r\n
 */
-void Server_Client::answer(int statusCode, int cseq, QByteArray data, quint32 sessionId, bool lastRN)
+void Server_Client::answer(int statusCode, int cseq, QByteArray data, uint32_t sessionId, bool lastRN)
 {
   if ( statusCode==200 || statusCode==1 ) {
     data.prepend(QString("Server: Cameron\r\n").toUtf8());

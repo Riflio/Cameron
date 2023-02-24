@@ -1,5 +1,5 @@
 #include "wthread.h"
-#include <QGuiApplication>
+#include <QCoreApplication>
 
 void WThread::_init(QObject * parent)
 {

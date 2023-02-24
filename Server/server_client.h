@@ -36,28 +36,29 @@ private slots:
   void onCameraErrored();
 
 private:
-  QTcpSocket * _socket;
-  Server * _server;
+  QTcpSocket *_socket =nullptr;
+  Server *_server =nullptr;
   int _id;
 
-  void answerAlive(int cseq, quint32 sessionId);
+  void answerAlive(int cseq, uint32_t sessionId);
   void answerOPTIONS(int cseq);
   void answerDESCRIBE(int cseq, int trackId);
-  void answerPLAY(int cseq, quint32 sessionId);
-  void answerTEARDOWN(int cseq, quint32 sessionId);
-  void answerSETUP(int cseq, int videoPort, int audioPort, quint32 sessionId);
+  void answerPLAY(int cseq, uint32_t sessionId);
+  void answerTEARDOWN(int cseq, uint32_t sessionId);
+  void answerSETUP(int cseq, int videoPort, int audioPort, uint32_t sessionId);
   void answerGETPARAMETER(int cseq, quint32 sessionId);
-  void answer(int statusCode, int cseq =0, QByteArray data ="", quint32 sessionId =0, bool lastRN =true);
+  void answer(int statusCode, int cseq =0, QByteArray data ="", uint32_t sessionId =0, bool lastRN =true);
 
   QMap<int, Server_Client_Streamer*> _streamers; //-- <cameraId, Server_Client_Streamer*> Стримеры, которые запустил этот клиент
 
   void aliveTimeOver();
-  QTimer * _aliveTimeOverTimer;
+  QTimer *_aliveTimeOverTimer;
 
   QString _requestData;
 
   typedef struct SessionInfo {
     int trackId =-1;
+    uint32_t blockSize =1400;
   } TSessionInfo;
 
   static QMap<quint32, TSessionInfo> _sessions;

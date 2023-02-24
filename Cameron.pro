@@ -1,13 +1,17 @@
 TEMPLATE = app
 
 QT += network core
+QT -= gui
 
 CONFIG += c++11
 CONFIG -= app_bundle
+CONFIG += console
 
 
 SOURCES += main.cpp \
     Plugins/wthread.cpp \
+    rtp/rtp_packet_h264.cpp \
+    rtp/rtp_packet_h264_unit_fu.cpp \
     rtsp/rtsp.cpp \
     rtsp/rtsp_channel.cpp \
     rtsp/rtsp_stream.cpp \
@@ -29,6 +33,8 @@ HEADERS += \
     Interfaces/IBuffer.h \
     Plugins/defines.h \
     Plugins/wpropertyinterface.h \
+    rtp/rtp_packet_h264.h \
+    rtp/rtp_packet_h264_unit_fu.h \
     rtsp/rtsp.h \
     rtsp/rtsp_channel.h \
     rtsp/rtsp_stream.h \
@@ -62,3 +68,6 @@ DEFINES += QT_MESSAGELOGCONTEXT
 
 
 
+#QMAKE_LFLAGS += -static-libstdc++
+#QMAKE_CXXFLAGS += -static
+#QMAKE_LFLAGS += -static
