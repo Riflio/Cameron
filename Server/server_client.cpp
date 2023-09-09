@@ -198,7 +198,7 @@ void Server_Client::request()
 void Server_Client::answerOPTIONS(int cseq)
 {
   QByteArray data;
-  data.append("Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
+  data.append("Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, ALIVE, GET_PARAMETER, SET_PARAMETER\r\n");
   answer(200, cseq, data);
 }
 
