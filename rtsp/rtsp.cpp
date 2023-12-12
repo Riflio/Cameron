@@ -1,36 +1,32 @@
 #include "rtsp.h"
 #include <QRegularExpression>
+#include <QAuthenticator>
+#include "estd/estd.h"
+#include "rtsp/rtsp_channel.h"
 
 namespace NS_RSTP {
 
 RTSP::RTSP(QObject *parent) : QObject(parent), _reqID(0)
 {
-  _sckConnect = new QTcpSocket(nullptr); //-- Без предка, потому что нам нужно самим в нужной последовательности всё удалить
-  _sdp = new SDP(this);
+  _sckConnect =new QTcpSocket(this);
+  _sdp =new SDP(this);
   connect(_sckConnect, &QTcpSocket::readyRead, this, &RTSP::onSckConnectReadyRead);
   connect(_sckConnect, &QTcpSocket::connected, this, &RTSP::onSckConnectConnected);
   connect(_sckConnect, &QTcpSocket::disconnected, this, &RTSP::onSckConnectDisconnected);
   connect(_sckConnect, &QAbstractSocket::errorOccurred, this, &RTSP::onSckConnectError);
 }
 
-
 /**
-* @brief 1.1 Коннектимся к камере
+* @brief Начинаем подключение к камере
 * @param url
 */
-void RTSP::cameraConnect(QHostAddress address, int port, QString params)
-{
-  qInfo()<<"RTSP cameraConnect"<<address<<port;
-  _gateway = QString("rtsp://%1:%2/%3").arg(address.toString()).arg(port).arg(params);
-  _sckConnect->connectToHost(address, port);
-}
-
 void RTSP::cameraConnect(QString url)
 {
-  _gateway = url;
-  QUrl decodeURL = QUrl(url);
-  qInfo()<<"RTSP cameraConnect url"<< url<<decodeURL.host()<<decodeURL.port();
-  _sckConnect->connectToHost( decodeURL.host(), decodeURL.port() );
+  _gateway =url;
+  qInfo()<<"RTSP camera connect url"<<_gateway;
+  _authenticator.user =_gateway.userName();
+  _authenticator.password =_gateway.password();
+  _sckConnect->connectToHost(_gateway.host(), _gateway.port());
 }
 
 /**
@@ -44,230 +40,166 @@ void RTSP::cameraDisconnect()
 }
 
 /**
-* @brief 1.2 Подконнектится получилось, начинаем общение
+* @brief Подконнектится получилось, начинаем общение
 */
 void RTSP::onSckConnectConnected()
 {
-    qInfo()<<"Camera socket connected";
-    options();
+  qInfo()<<"Camera socket connected";
+  //-- Первым дело запрашиваем, какие комманды поддерживаются
+  options();
 }
 
 /**
-* @brief 2. Запросим камеру о доступных командах
+* @brief Запросим камеру о доступных командах
 */
 void RTSP::options()
 {
   qInfo()<<"RTSP options";
-  SendParams params;
-  params.insert("User-Agent", "QRTSP");
-  int r = send(OPTIONS, params);
-  reqHistories.insert(r, ReqHistory(OPTIONS, -1));
+  THeaders headers;
+  int r =send(OPTIONS, headers, -1);
+  if ( r!=0 ) { emit errored(); return; }
 }
 
 /**
-* @brief 3 Запросим камеру о доступных каналах и их свойствах
+* @brief Запросим камеру о доступных каналах и их свойствах
 */
 void RTSP::describe()
 {
   qInfo()<<"RTSP describe";
-  SendParams params;
-  int r = send(DESCRIBE, params);
-  reqHistories.insert(r, ReqHistory(DESCRIBE, -1));
+  THeaders headers;
+  int r =send(DESCRIBE, headers, -1);
+  if ( r!=0 ) { emit errored(); return; }
 }
 
 /**
-* @brief 4. Создаём канал у камеры и выставляем настройки
-* @param channel
-* @param port
-*/
-void RTSP::setup(int channel, int port)
-{
-  qInfo()<<"RTSP setup"<<channel<<port;
-  SendParams params;
-  params.insert("Transport", QString("RTP/AVP;unicast;client_port=%1-%2").arg(port).arg(port+1) );
-  int r = send(SETUP, params);
-  reqHistories.insert(r, ReqHistory(SETUP, channel));
-}
-
-/**
-* @brief 5. Отсылаем запрос на начало воспроизведения
-* @param channel
-*/
-void RTSP::play(int channel)
-{
-  qInfo()<<"RTSP play"<<channel;
-  SendParams params;
-  params.insert("Session", QString::number( _channels.at(channel)->session()));
-  params.insert("Range", "npt=0.000-");
-  int r = send(PLAY, params);
-  reqHistories.insert(r, ReqHistory(PLAY, channel));
-}
-
-/**
-* @brief Через заданные промежутки времени отсылаем запрос, что мы живы
-*/
-void RTSP::alive(int channel)
-{
-  SendParams params;
-  params.insert("Session", QString::number( _channels.at(channel)->session()));
-  int r = send(ALIVE, params);
-  reqHistories.insert(r, ReqHistory(ALIVE, channel));
-}
-
-/**
-* @brief 7. Отсылаем запрос на завершение воспроизведения
-* @param channel
-*/
-void RTSP::teardown(int channel)
-{
-  qInfo()<<"RTSP teardown"<<channel;
-  SendParams params;
-  params.insert("Session", QString::number( _channels.at(channel)->session()));
-  int r = send(TEARDOWN, params);
-  reqHistories.insert(r, ReqHistory(TEARDOWN, channel));
-  emit toTeardown(channel);
-}
-
-/**
-* @brief Пришёл ответ на запрос от камеры
+* @brief Пришёл ответ от камеры на наш запрос
 *
 */
 void RTSP::onSckConnectReadyRead()
 {
-  /**
-  * Ответ может состоять из двух частей всё, что до пустой строки будем считать заголовком,
-  * всё, что после - дополнительными данными.
-  * Их парсинг зависит уже от того, что в заголовке
-  */
-  QString responseText = _sckConnect->readAll();
+  const QByteArray responseData =_sckConnect->readAll();
 
-  qInfo()<<"RTSP answer"<<responseText;
+  qInfo()<<"RTSP answer"<<responseData;
+  if ( responseData.left(RTSPVERSION.length())!=RTSPVERSION ) { qWarning()<<"Unknown protocol!"; return; }
 
-  //-- Разделяем построчно
-  QStringList responseList = responseText.split("\r\n");
+  THeaders respHeaders; //-- Заголовки
+  QByteArray respBody; //-- Тело запроса
 
-  //-- В первой строке - статус
-  if ( responseList.takeAt(0)!="RTSP/1.0 200 OK" ) { qWarning()<<"ERROR"; return; }
+  //-- Найдём где у нас заголовки кончаются
+  uint32_t headersEndIndex =responseData.indexOf("\r\n\r\n")+4;
 
-  //-- Разбираем строки ответа на составляющие
-  struct responseData {
-    QString command;
-    QString value;
-    QString params;
-  };
-  QMap<QString, responseData> responseDataList;
+  //-- Разбираем заголовки
+  QByteArray headerName ="status", curBuf; //-- После версии сразу идёт статус, для него нет значения заголовка, так что делаем явно
+  for (uint32_t i=RTSPVERSION.length()+1; i<headersEndIndex; ++i) { //-- Пропускаем версию и начинаем разбор
+    if ( responseData[i]=='\r' && responseData[i+1]=='\n' ) { if ( !curBuf.isEmpty() ) { respHeaders.append({headerName.toLower(), curBuf}); } headerName.clear(); curBuf.clear(); i++; continue; }
+    if ( responseData[i]==':' ) { headerName =curBuf; curBuf.clear(); ++i; continue; }
+    curBuf.push_back(responseData[i]);
+  }
 
-  QString extraData=""; //-- Дополнительные данные
+  //-- Оставшееся после заголовков до конца это тело
+  respBody =responseData.mid(headersEndIndex, -1);
+
+  //-- Проверим наличие обязательных полей и значения
+  auto cseqIt =std::find_if(respHeaders.begin(), respHeaders.end(), CompareFirst<QString, QString>("cseq"));
+  auto statusIt =std::find_if(respHeaders.begin(), respHeaders.end(), CompareFirst<QString, QString>("status"));
+
+  if ( cseqIt==respHeaders.end() ) { qWarning()<<"Has no Cseq param!"; emit errored(); return; }
 
   //-- Нужно узнать на какой запрос этот ответ
   ReqHistory historyReq;
+  uint32_t cseq =cseqIt->second.toInt();
+  if ( !reqHistories.contains(cseq) ) { qWarning()<<"There was no request Cseq"<<cseq; emit errored(); return; }
+  historyReq =reqHistories.take(cseq);
 
-  //-- Команда-всё, что до ":" значение - всё, что после и до первой ";" а дальше дополнительные параметры, если есть.
-  QRegularExpression rx("(.+):\\s?([^;]*);?(.*)?", QRegularExpression::CaseInsensitiveOption);
-  QRegularExpressionMatch rxMath;
-
-  //-- Парсим до появления пустой строки
-  while (responseList.length()>0) {
-    QString responseStr = responseList.takeAt(0);
-    if ( responseStr.isEmpty() ) { break; }
-
-    rxMath = rx.match(responseStr);
-    if ( rxMath.hasMatch() ) {
-      responseData data;
-      data.command = rxMath.captured(1);
-      data.value = rxMath.captured(2);
-      data.params = rxMath.captured(3);
-      responseDataList.insert(data.command, data);
-
-      //-- Пока разбираем весь ответ заодно ищем айдишник запроса, что бы узнать на какой хоть запрос этот ответ
-      if ( data.command=="Cseq" ) {
-        historyReq = reqHistories.value(data.value.toInt());
-      }
+  if ( statusIt->second!="200 OK" ) {
+    if ( statusIt->second=="401 Unauthorized" ) {
+     _authenticator.parseHttpResponse(respHeaders, false, _gateway.host());
+     if ( _authenticator.phase==QAuthenticatorPrivate::Invalid ) { qWarning()<<"Unable parse WWW-Authenticate"; emit errored(); return; }
+     options(); //-- В любом случае заново запрашиваем опции что бы начать уже с авторизацией
+     return;
     }
+    //-- Не знаем больше что делать при этом статусе, вываливаемся в ошибку
+    emit errored();
+    return;
   }
 
-  //-- Заголовок разобрали, оставшиеся строки соединим обратно и засунем в дополнительные данные
-  extraData = responseList.join("\r\n");
-
-  //-- Так, запрос узнали, ответ разобрали, решаем, что с ним делать
+  //-- Реагируем на команды
   switch (historyReq.method) {
-    case OPTIONS: { describe(); break; }
+    case OPTIONS: {
+      describe();
+      break;
+    }
     case DESCRIBE: { //-- Парсим каналы
       //-- Распарсим sdp данные
-      _sdp->parse(extraData.toUtf8());
+      if ( !_sdp->parse(respBody) ) { qWarning()<<"Unable parse SDP!"; return; }
       qDebug()<<"SDP channels count"<<_sdp->medias.length();
       for (int i=0; i<_sdp->medias.length(); ++i) {
-        RTSP_Channel * channel = new RTSP_Channel(nullptr, this); //-- Без предка, потому что самостоятельно будем удалять, т.к. они могут перед удалением что-нить отправить
+        RTSP_Channel *channel =new RTSP_Channel(this);
         //-- Отлавливаем события
         connect(channel, &RTSP_Channel::errored, this, &RTSP::errored);
-        channel->_sdpMedia = _sdp->medias.at(i);
+        channel->_sdpMedia =_sdp->medias.at(i);
         _channels.append(channel);
       }
       emit connected();
       break;
     }
-    case SETUP: {
-      RTSP_Channel * channel = getChannel(historyReq.channel);
-      //-- От ответа, пока что, нам нужен номер сессии
-      channel->_session = responseDataList.value("Session").value.toInt();
-      emit setuped(channel->id());
+    case NONE: {
       break;
     }
-    case PLAY: {
-      emit played(historyReq.channel);
+    default: {
+      //-- Конкретные действия отдаём на обработку самому каналу
+      if ( historyReq.channel<0 )  { emit errored(); return; }
+      int r =_channels.at(historyReq.channel)->onRTSPReply(historyReq.method, respHeaders);
+      if ( r!=0 ) { emit errored(); return; }
       break;
     }
-    case TEARDOWN: {
-      emit teardowned(historyReq.channel);
-      _sckConnect->close();
-      break;
-    }
-    case GET_PARAMETER:
-    case ALIVE: {
-      RTSP_Channel * channel = getChannel(historyReq.channel);
-      channel->alived();
-      emit alived(channel->id());
-    }
-    case NONE: { break; }
   }
 }
-
 
 /**
 * @brief Подготавливаем и отправляем запрос к камере
 * @param method
 * @param params
+* @param channel
+* @return
 */
-int RTSP::send(METHODS method, SendParams params)
+int RTSP::send(METHODS method, const THeaders &headers, uint16_t channel)
 {
   QString sMethod;
   switch (method) {
-    case OPTIONS: sMethod="OPTIONS"; break;
-    case DESCRIBE: sMethod="DESCRIBE"; break;
-    case SETUP: sMethod="SETUP"; break;
-    case PLAY: sMethod="PLAY"; break;
-    case GET_PARAMETER: sMethod="GET_PARAMETER"; break;
-    case TEARDOWN: sMethod="TEARDOWN"; break;
-    case ALIVE: sMethod="GET_PARAMETER"; break; //-- Не хотят некоторые камеры воспринимать ALIVE, а вот GET_PARAMETER проходит
-    default: break;
+    case OPTIONS: { sMethod ="OPTIONS"; break; }
+    case DESCRIBE: { sMethod ="DESCRIBE"; break; }
+    case SETUP: { sMethod ="SETUP"; break; }
+    case PLAY: { sMethod ="PLAY"; break; }
+    case GET_PARAMETER: { sMethod ="GET_PARAMETER"; break; }
+    case TEARDOWN: { sMethod ="TEARDOWN"; break; }
+    case ALIVE: { sMethod ="GET_PARAMETER"; break; } //-- Не хотят некоторые камеры воспринимать ALIVE, а вот GET_PARAMETER проходит
+    default: { qWarning()<<"Unsupported method!"; return -1; }
   }
 
   _reqID++;
 
   //-- Запишем базовую необходимую инфу
-  _sckConnect->write(QString("%1 %2 RTSP/1.0\r\n").arg(sMethod).arg(_gateway).toUtf8());
+  _sckConnect->write(QString("%1 rtsp://%2:%3 RTSP/1.0\r\n").arg(sMethod).arg(_gateway.host()).arg(_gateway.port()).toUtf8());
   _sckConnect->write(QString("CSeq: %1\r\n").arg(_reqID).toUtf8());
+  _sckConnect->write(QString("User-Agent: %1\r\n").arg("QRTSP").toUtf8());
+  if ( _authenticator.method!=QAuthenticatorPrivate::Method::None ) {
+    _sckConnect->write(QString("Authorization: %1\r\n").arg(_authenticator.calculateResponse(sMethod.toUtf8(), _gateway.toString().toUtf8(), _gateway.host())).toUtf8());
+  }
 
   //-- Пробегаемся по всем параметрам и добавляем к запросу
-  SendParams::iterator i;
-  for (i=params.begin(); i!=params.end(); ++i) {
-    _sckConnect->write( QString("%1: %2\r\n").arg(i.key()).arg(i.value()).toUtf8() );
+  foreach(const THeader &header, headers) {
+    _sckConnect->write(QString("%1: %2\r\n").arg(header.first).arg(header.second).toUtf8());
   }
 
   //-- Заканчиваем пустой строкой
   _sckConnect->write("\r\n");
 
-  return _reqID;
+  //-- Запишем в историю
+  reqHistories.insert(_reqID, ReqHistory(method, channel));
+
+  //-- Всё ок
+  return 0;
 }
 
 /**
@@ -284,7 +216,7 @@ int RTSP::channelsCount()
 * @param id
 * @return
 */
-RTSP_Channel * RTSP::getChannel(int id)
+RTSP_Channel *RTSP::getChannel(int id)
 {
   return (id<channelsCount()) ? _channels[id] : nullptr;
 }

@@ -5,9 +5,10 @@
 #include <QDebug>
 
 #include <QTcpSocket>
+#include <QAuthenticator>
+#include <QtNetwork/private/qauthenticator_p.h>
 #include <QUrl>
 
-#include "rtsp_channel.h"
 #include "sdp/sdp.h"
 
 namespace NS_RSTP {
@@ -15,76 +16,74 @@ namespace NS_RSTP {
 /**
 * @brief Управляем каналами вещания камеры
 */
+class RTSP_Channel;
 class RTSP : public QObject
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit RTSP(QObject *parent = 0);
-    ~RTSP();
+  explicit RTSP(QObject *parent = 0);
+  ~RTSP();
 
-    enum METHODS{
-        NONE,
-        OPTIONS,
-        DESCRIBE,
-        SETUP,
-        PLAY,
-        GET_PARAMETER,
-        TEARDOWN,
-        ALIVE
-    };
+  const QByteArray RTSPVERSION ="RTSP/1.0";
 
-    RTSP_Channel * getChannel(int id);
-    int channelsCount();
+  enum METHODS{
+    NONE,
+    OPTIONS,
+    DESCRIBE,
+    SETUP,
+    PLAY,
+    GET_PARAMETER,
+    TEARDOWN,
+    ALIVE
+  };
 
-    friend class RTSP_Channel;
+  RTSP_Channel *getChannel(int id);
+  int channelsCount();
+
+  friend class RTSP_Channel;
 
 signals:
-    void connected(); //-- Подключились к камере
-    void disconnected(); //-- Отключились
-    void errored(); //-- Возникла ошибка канала/потока и т.д.
-    void setuped(int channel); //-- Создали канал для передачи
-    void played(int channel); //-- Начали передачу
-    void toTeardown(int channel); //-- Заканчиваем передачу
-    void teardowned(int channel); //-- Закончили передачу
-    void alived(int channel); //-- Мы ещё живы и ведём передачу
+  void connected(); //-- Подключились к камере
+  void disconnected(); //-- Отключились
+  void errored(); //-- Возникла ошибка канала/потока и т.д.
+
 
 public slots:
-    void cameraConnect(QHostAddress address, int port, QString params);
-    void cameraConnect(QString url);
-    void cameraDisconnect();
+  void cameraConnect(QString url);
+  void cameraDisconnect();
 
 private slots:
-    void onSckConnectReadyRead();
-    void onSckConnectConnected();
-    void onSckConnectDisconnected();
-    void onSckConnectError(QAbstractSocket::SocketError);
+  void onSckConnectReadyRead();
+  void onSckConnectConnected();
+  void onSckConnectDisconnected();
+  void onSckConnectError(QAbstractSocket::SocketError);
+
+protected:
+  typedef QPair<QByteArray, QByteArray> THeader;
+  typedef QList<QPair<QByteArray, QByteArray>> THeaders;
+  int send(METHODS method, const THeaders &headers, uint16_t channel);
 
 private:
-    QTcpSocket * _sckConnect; //-- Сокет для общения
-    QList<RTSP_Channel*> _channels; //-- Все каналы камеры
-    QString _gateway;  //-- Собранная строка подключения
-    int _reqID; //-- Каждый запрос к камере должен сопровождаться айдишником, в ответ мы его же и получаем
+  QTcpSocket *_sckConnect =nullptr; //-- Сокет для общения
+  QAuthenticatorPrivate _authenticator; //-- Для обработки авторизации на камере
+  QList<RTSP_Channel*> _channels; //-- Все каналы камеры
+  QUrl _gateway;  //-- Собранная строка подключения
+  int _reqID; //-- Каждый запрос к камере должен сопровождаться айдишником, в ответ мы его же и получаем
 
-    //-- Нужно знать, на какой запроc по _reqID пришёл ответ
-    class ReqHistory {
-        public:
-        ReqHistory(METHODS m = NONE, int c = -1): method(m), channel(c) {}
-        METHODS method=NONE; //-- Какой был метод
-        int channel=-1; //-- К какому каналу относится
-    };
-    QHash<int, ReqHistory> reqHistories;
+  //-- Нужно знать, на какой запроc по _reqID пришёл ответ
+  class ReqHistory {
+  public:
+    ReqHistory(METHODS m = NONE, int c = -1): method(m), channel(c) {}
+    METHODS method=NONE; //-- Какой был метод
+    int channel=-1; //-- К какому каналу относится
+  };
+  QHash<int, ReqHistory> reqHistories;
 
-    SDP * _sdp; //-- Парсер sdp данных
+  SDP *_sdp =nullptr; //-- Парсер sdp данных
 
-    typedef  QMap<QString, QString> SendParams;
-    int send(METHODS method, SendParams params);
+  void options();
+  void describe();
 
-    void options();
-    void describe();
-    void setup(int channel, int port);
-    void play(int channel);
-    void alive(int channel);
-    void teardown(int channel);    
 };
 }
 #endif // RTSP_H
