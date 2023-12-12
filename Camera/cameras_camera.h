@@ -5,6 +5,7 @@
 #include "rtsp/rtsp.h"
 #include "Interfaces/icameras_camera.h"
 #include "Plugins/PluginEventsWrapper.h"
+#include "rtsp/rtsp_channel.h"
 
 using namespace NS_RSTP;
 
@@ -31,8 +32,8 @@ public:
   bool stop();
   bool go();
 
-  ISDP::sMedia * getSDPMedia();
-  IRTSP_Stream * getStreamer();
+  ISDP::sMedia *getSDPMedia();
+  IRTSP_Stream *getStreamer();
 
 signals:
   void errored();
@@ -47,18 +48,18 @@ protected slots:
   void onCameraDisconnected();
   void onCameraErrored();
 
-  void onSetuped(int);
-  void onPlayed(int);
-  void onTeardowned(int);
+  void onSetuped();
+  void onPlayed();
+  void onTeardowned();
 
 private:
-  int _id;
-  QString _url;
-  int _streamPort;
-  int _channel;
-  RTSP * _rtsp;
-  int _status;
-  int _clientsCount;
+  int _id =-1;
+  QString _url ="";
+  int _streamPort =-1;
+  int _channel =-1;
+  RTSP *_rtsp =nullptr;
+  int _status =S_NONE;
+  int _clientsCount =0;
 
 };
 

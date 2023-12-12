@@ -43,7 +43,8 @@ private slots:
 
 private:
   QTcpServer *_server =nullptr;
-  QHash<int, Server_Client*> _clients;
+  QHash<uint32_t, Server_Client*> _clients;
+  uint32_t _lastClientID =0; //-- Инкрементный ИД клиента для списка _clients, что бы потом нам не путать от кого что было
   QHostAddress _host;
   int _port;
   ICameras *_cameras =nullptr;

@@ -6,6 +6,7 @@
 /**
 * @brief RTP пакет с данными видео формата H264
 * Базовый NAL unit
+* @ref RFC6184
 */
 class RTP_Packet_H264 : public RTP_Packet
 {
@@ -22,8 +23,6 @@ public:
     NON_IDR = 1, //-- Пакет с сылками на другие кадры
     SEI = 6 //-- Supplemental Enhancement Information (SEI), хз короче, пусть будет
   };
-
-  const QByteArray NAL_DELEMITER = QByteArray::fromRawData("\x00\x00\x00\x01", 4); //-- Разделитель NAL блоков 00 00 00 01
 
   uint8_t nalHeader() const;
   bool setNALHeader(uint8_t nalHeader);

@@ -12,6 +12,8 @@ SOURCES += main.cpp \
     Plugins/wthread.cpp \
     rtp/rtp_packet_h264.cpp \
     rtp/rtp_packet_h264_unit_fu.cpp \
+    rtp/rtp_packet_h265.cpp \
+    rtp/rtp_packet_h265_unit_fu.cpp \
     rtsp/rtsp.cpp \
     rtsp/rtsp_channel.cpp \
     rtsp/rtsp_stream.cpp \
@@ -33,8 +35,11 @@ HEADERS += \
     Interfaces/IBuffer.h \
     Plugins/defines.h \
     Plugins/wpropertyinterface.h \
+    estd/estd.h \
     rtp/rtp_packet_h264.h \
     rtp/rtp_packet_h264_unit_fu.h \
+    rtp/rtp_packet_h265.h \
+    rtp/rtp_packet_h265_unit_fu.h \
     rtsp/rtsp.h \
     rtsp/rtsp_channel.h \
     rtsp/rtsp_stream.h \
@@ -66,6 +71,7 @@ HEADERS += \
 
 DEFINES += QT_MESSAGELOGCONTEXT
 
+QT += core-private network-private
 
 
 #QMAKE_LFLAGS += -static-libstdc++

@@ -19,7 +19,7 @@ class Server_Client : public Server_Client_Info
 {
   Q_OBJECT
 public:
-  explicit Server_Client(QObject *parent =nullptr, QTcpSocket * socket =nullptr, Server * server =nullptr);
+  explicit Server_Client(QObject *parent =nullptr, QTcpSocket * socket =nullptr, Server * server =nullptr, int clientID =0);
   ~Server_Client();
 
   bool loginUser(QString uName, QString uPass);

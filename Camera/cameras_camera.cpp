@@ -1,16 +1,12 @@
 #include "cameras_camera.h"
 
-Cameras_Camera::Cameras_Camera(QObject *parent)
-    : QObject(parent), _id(-1), _url(""), _streamPort(-1), _channel(-1), _status(S_NONE), _clientsCount(0)
+Cameras_Camera::Cameras_Camera(QObject *parent): QObject(parent)
 {
   qInfo()<<"Camera new";
-  _rtsp = new RTSP(this);
-  connect(_rtsp, &RTSP::connected, this, &Cameras_Camera::onCameraConnected );
-  connect(_rtsp, &RTSP::disconnected, this, &Cameras_Camera::onCameraDisconnected );
+  _rtsp =new RTSP(this);
+  connect(_rtsp, &RTSP::connected, this, &Cameras_Camera::onCameraConnected);
+  connect(_rtsp, &RTSP::disconnected, this, &Cameras_Camera::onCameraDisconnected);
   connect(_rtsp, &RTSP::errored, this, &Cameras_Camera::onCameraErrored);
-  connect(_rtsp, &RTSP::setuped, this, &Cameras_Camera::onSetuped );
-  connect(_rtsp, &RTSP::played, this, &Cameras_Camera::onPlayed );
-  connect(_rtsp, &RTSP::toTeardown, this, &Cameras_Camera::onTeardowned);
 }
 
 int Cameras_Camera::id()
@@ -26,10 +22,10 @@ int Cameras_Camera::status()
 bool Cameras_Camera::setSettings(QString url, int id, int channel, int streamPort)
 {
   qInfo()<<"Camera set settings "<<url;
-  _id = id;
-  _url = url;
-  _channel = channel;
-  _streamPort = streamPort;
+  _id =id;
+  _url =url;
+  _channel =channel;
+  _streamPort =streamPort;
   return true;
 }
 
@@ -47,8 +43,8 @@ bool Cameras_Camera::start()
 
   _rtsp->cameraConnect(_url);
 
-  _status &= ~S_ERROR; //-- Уберём ошибку в случае попытки переподключения
-  _status |= S_STARTED;
+  _status &=~S_ERROR; //-- Уберём ошибку в случае попытки переподключения
+  _status |=S_STARTED;
 
   return true;
 }
@@ -59,7 +55,7 @@ bool Cameras_Camera::start()
 void Cameras_Camera::onCameraConnected()
 {
   qInfo()<<"Camera connected ";
-  _status |= S_CONNECTED;
+  _status |=S_CONNECTED;
 
   emit connected();
   emit Events->doAction("CameraConnected", QVariantList()<<Events->ARG(this));
@@ -71,7 +67,7 @@ void Cameras_Camera::onCameraConnected()
 void Cameras_Camera::onCameraDisconnected()
 {
   qInfo()<<"Camera disconnected";
-  _status = S_NONE;
+  _status =S_NONE;
 
   emit disconnected();
   emit Events->doAction("CameraDisconnected", QVariantList()<<Events->ARG(this));
@@ -83,8 +79,8 @@ void Cameras_Camera::onCameraDisconnected()
 void Cameras_Camera::onCameraErrored()
 {    
   qWarning()<<"Camera "<<id()<<"error!";
-  _status = S_NONE;
-  _status |= S_ERROR;
+  _status =S_NONE;
+  _status |=S_ERROR;
 
   _rtsp->cameraDisconnect();
 
@@ -103,12 +99,12 @@ bool Cameras_Camera::setup()
 
   qInfo()<<"";
 
-  RTSP_Channel * channel = _rtsp->getChannel(_channel);
+  RTSP_Channel *channel =_rtsp->getChannel(_channel);
+  if ( channel==nullptr ) { qWarning()<<"Channel"<<channel->id()<<"not found!"; return false; }
 
-  if ( channel==nullptr ) {
-    qWarning()<<"Channel not found!"<<_channel;
-    return false;
-  }
+  connect(channel, &RTSP_Channel::setuped, this, &Cameras_Camera::onSetuped);
+  connect(channel, &RTSP_Channel::played, this, &Cameras_Camera::onPlayed);
+  connect(channel, &RTSP_Channel::toTeardown, this, &Cameras_Camera::onTeardowned);
 
   channel->setup(_streamPort);
 
@@ -118,10 +114,10 @@ bool Cameras_Camera::setup()
 /**
 * @brief Удачно выставили настройки
 */
-void Cameras_Camera::onSetuped(int)
+void Cameras_Camera::onSetuped()
 {
   qInfo()<<"Camera setuped";
-  _status |= S_SETUPED;
+  _status |=S_SETUPED;
 
   emit setuped();
   emit Events->doAction("CameraSetuped", QVariantList()<<Events->ARG(this));
@@ -147,15 +143,18 @@ bool Cameras_Camera::play()
 */
 bool Cameras_Camera::stop()
 {
-  qInfo()<<"Camera stop";
+  qInfo()<<"Camera stop, clients count:"<<_clientsCount;
   _clientsCount--;
 
-  if ( (_status & S_PLAYED)  && (_clientsCount<=0) ) { //-- Если запущена и не осталось больше подключившихся
-    _rtsp->getChannel(_channel)->teardown();
-    _status = S_NONE;
+  if ( _status&S_PLAYED ) { //-- Если запущена
+    if ( _clientsCount<=0 ) { //-- И нет больше клиентов подключившихся
+      _rtsp->getChannel(_channel)->teardown();
+      _status =S_NONE;
+      _clientsCount =0;
+    }
+  } else {
+    _clientsCount =0;
   }
-
-  _clientsCount = 0;
 
   return true;
 }
@@ -192,10 +191,10 @@ bool Cameras_Camera::go()
 /**
 * @brief Начали приём видео
 */
-void Cameras_Camera::onPlayed(int)
+void Cameras_Camera::onPlayed()
 {
   qInfo()<<"Camera played ";
-  _status |= S_PLAYED;
+  _status |=S_PLAYED;
   emit played();
   emit Events->doAction("CameraPlayed", QVariantList()<<Events->ARG(this));
 }
@@ -204,13 +203,13 @@ void Cameras_Camera::onPlayed(int)
 * @brief Закончили вещание
 * @param chanelID
 */
-void Cameras_Camera::onTeardowned(int chanelID)
+void Cameras_Camera::onTeardowned()
 {
-  Q_UNUSED(chanelID);
   if ( _status&S_ERROR ) { return; }
-  qDebug()<<"Camera"<<id()<<"chanel"<<chanelID<<"teardowned";
-  _status |= S_NONE;
+  qDebug()<<"Camera"<<id()<<"chanel"<<_channel<<"teardowned";
+  _status |=S_NONE;
   _rtsp->cameraDisconnect();
+  _clientsCount =0;
   emit teardowned();
   emit Events->doAction("CameraTeardowned", QVariantList()<<Events->ARG(this));
 }
@@ -219,7 +218,7 @@ void Cameras_Camera::onTeardowned(int chanelID)
 * @brief  Отдаём SDP медиа инфу о камере
 * @return
 */
-SDP::sMedia * Cameras_Camera::getSDPMedia()
+SDP::sMedia *Cameras_Camera::getSDPMedia()
 {
   qDebug()<<"Camera getSDP";
   return _rtsp->getChannel(_channel)->sdpMedia();
@@ -229,7 +228,7 @@ SDP::sMedia * Cameras_Camera::getSDPMedia()
 * @brief Отдаём стример потока камеры
 * @return
 */
-NS_RSTP::IRTSP_Stream * Cameras_Camera::getStreamer()
+NS_RSTP::IRTSP_Stream *Cameras_Camera::getStreamer()
 {
   return _rtsp->getChannel(_channel)->getStreamer();
 }

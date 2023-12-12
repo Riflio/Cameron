@@ -15,6 +15,7 @@ SDP::SDP(QObject *parent): QObject(parent)
 bool SDP::parse(QByteArray data)
 {
   qInfo()<<"SDP Parse"<<data;
+  if ( data.isEmpty() ) { return false; }
 
   qDeleteAll(medias);
   medias.clear();

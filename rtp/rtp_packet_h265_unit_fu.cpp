@@ -1,6 +1,6 @@
-#include "rtp_packet_h264_unit_fu.h"
+#include "rtp_packet_h265_unit_fu.h"
 
-RTP_Packet_H264_Unit_FU::RTP_Packet_H264_Unit_FU(const QByteArray &data): RTP_Packet_H264(data)
+RTP_Packet_H265_Unit_FU::RTP_Packet_H265_Unit_FU(const QByteArray &data): RTP_Packet_H265(data)
 {
 
 }
@@ -10,7 +10,7 @@ RTP_Packet_H264_Unit_FU::RTP_Packet_H264_Unit_FU(const QByteArray &data): RTP_Pa
 * То же что и у NAL
 * @return
 */
-uint8_t RTP_Packet_H264_Unit_FU::fuIndicator() const
+uint8_t RTP_Packet_H265_Unit_FU::fuIndicator() const
 {
   return nalHeader();
 }
@@ -20,7 +20,7 @@ uint8_t RTP_Packet_H264_Unit_FU::fuIndicator() const
 * @param newFUIndicator
 * @return
 */
-bool RTP_Packet_H264_Unit_FU::setFUIndicator(uint8_t FUIndicator)
+bool RTP_Packet_H265_Unit_FU::setFUIndicator(uint8_t FUIndicator)
 {
   return setNALHeader(FUIndicator);
 }
@@ -29,9 +29,9 @@ bool RTP_Packet_H264_Unit_FU::setFUIndicator(uint8_t FUIndicator)
 * @brief Отдаём заголовок FU сожержимого целиком
 * @return
 */
-uint8_t RTP_Packet_H264_Unit_FU::fuHeader() const
+uint8_t RTP_Packet_H265_Unit_FU::fuHeader() const
 {
-  return _data[RTP_Packet_H264::payloadStart()];
+  return _data[RTP_Packet_H265::payloadStart()];
 }
 
 /**
@@ -39,9 +39,9 @@ uint8_t RTP_Packet_H264_Unit_FU::fuHeader() const
 * @param newFUHeader
 * @return
 */
-bool RTP_Packet_H264_Unit_FU::setFUHeader(uint8_t FUHeader)
+bool RTP_Packet_H265_Unit_FU::setFUHeader(uint8_t FUHeader)
 {
-  _data[RTP_Packet_H264::payloadStart()] =FUHeader&0xDF; //-- Бит 3 зарезеривирован и должен быть 0;
+  _data[RTP_Packet_H265::payloadStart()] =FUHeader;
   return true;
 }
 
@@ -49,7 +49,7 @@ bool RTP_Packet_H264_Unit_FU::setFUHeader(uint8_t FUHeader)
 * @brief Отдаём какая часть FU пакета
 * @return
 */
-RTP_Packet_H264_Unit_FU::FU_PARTS RTP_Packet_H264_Unit_FU::fuPart() const
+RTP_Packet_H265_Unit_FU::FU_PARTS RTP_Packet_H265_Unit_FU::fuPart() const
 {
   if ( ((fuHeader()&0x80)>>7)==1 ) { return FU_START; }
   if ( ((fuHeader()&0x40)>>6)==1 ) { return FU_END; }
@@ -61,7 +61,7 @@ RTP_Packet_H264_Unit_FU::FU_PARTS RTP_Packet_H264_Unit_FU::fuPart() const
 * @param fuPart
 * @return
 */
-bool RTP_Packet_H264_Unit_FU::setFUPart(FU_PARTS FUPart)
+bool RTP_Packet_H265_Unit_FU::setFUPart(FU_PARTS FUPart)
 {
   uint8_t fuh =fuHeader()&0x3F; //-- Только первые 2 бита нас интересуют
 
@@ -76,17 +76,22 @@ bool RTP_Packet_H264_Unit_FU::setFUPart(FU_PARTS FUPart)
 }
 
 /**
-* @brief RTP_Packet_H264_Unit_FU::fuType
+* @brief RTP_Packet_H265_Unit_FU::fuType
 * @return
 */
-uint8_t RTP_Packet_H264_Unit_FU::fuType() const
+uint8_t RTP_Packet_H265_Unit_FU::fuType() const
 {
-  return fuHeader()&0x1F;
+  return fuHeader()&0x3F;
 }
 
-bool RTP_Packet_H264_Unit_FU::setFUType(uint8_t FUType)
+/**
+* @brief RTP_Packet_H265_Unit_FU::setFUType
+* @param FUType
+* @return
+*/
+bool RTP_Packet_H265_Unit_FU::setFUType(uint8_t FUType)
 {
-  uint8_t fuh =fuHeader()&0xE0; //-- Только последние 5 бит нас интересуют
+  uint8_t fuh =fuHeader()&0xC0; //-- Только последние 6 бит нас интересуют
   return setFUHeader(fuh | FUType);
 }
 
@@ -94,7 +99,7 @@ bool RTP_Packet_H264_Unit_FU::setFUType(uint8_t FUType)
 * @brief Перегружаем смещение полезного содержимого
 * @return
 */
-uint16_t RTP_Packet_H264_Unit_FU::payloadStart() const
+uint16_t RTP_Packet_H265_Unit_FU::payloadStart() const
 {
-  return RTP_Packet_H264::payloadStart()+1; //-- 1 байт заголовок FU
+  return RTP_Packet_H265::payloadStart()+1;
 }

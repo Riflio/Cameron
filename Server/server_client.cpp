@@ -6,17 +6,17 @@
 
 QMap<quint32, Server_Client::TSessionInfo> Server_Client::_sessions;
 
-Server_Client::Server_Client( QObject *parent, QTcpSocket * socket, Server * server ) : Server_Client_Info(parent), _socket(socket), _server(server)
+Server_Client::Server_Client(QObject *parent, QTcpSocket * socket, Server * server , int clientID) : Server_Client_Info(parent), _socket(socket), _server(server), _id(clientID)
 {
-  _id = _socket->socketDescriptor();
   connect(_socket, &QTcpSocket::readyRead, this, &Server_Client::request);
 
-  //-- Клиент должен высылать подтверждение каждые N секунд, если с последнего запроса клиента о подтверждении прошло N времени, значит клиент отъехал нахуй
-  _aliveTimeOverTimer = new QTimer(this);
+  //-- Клиент должен высылать подтверждение каждые N секунд, если с последнего запроса клиента о подтверждении прошло N времени, значит клиент больше недоступен
+  _aliveTimeOverTimer =new QTimer(this);
   _aliveTimeOverTimer->setInterval(120000);
   _aliveTimeOverTimer->start();
-
   connect(_aliveTimeOverTimer, &QTimer::timeout, this, &Server_Client::aliveTimeOver);
+
+  qDebug()<<"New client ID:"<<_id;
 }
 
 int Server_Client::clientID()
@@ -37,43 +37,43 @@ void Server_Client::onCameraErrored()
 */
 void Server_Client::request()
 {
-  QString data = _socket->readAll();
-  _requestData += data;
+  QString data =_socket->readAll();
+  _requestData +=data;
 
   qInfo()<<"\n\n\n"<<"New client request"<<data;
 
-  int commandEndIndex = _requestData.indexOf("\r\n\r\n");
+  int commandEndIndex =_requestData.indexOf("\r\n\r\n");
 
   if (commandEndIndex==-1) { //-- Команда полностью завершена только после пары \r\n, до этого момента накапливаем
     return;
   }
 
   //-- Разбираем по строкам
-  QStringList dataList = _requestData.split("\r\n");
+  QStringList dataList =_requestData.split("\r\n");
 
-  _requestData = "";
+  _requestData ="";
 
   //-- Берём первую строку, узнаём команду, исходный юрл и версию ртсп
-  QString initLine = dataList.takeAt(0);
+  QString initLine =dataList.takeAt(0);
 
   //-- Парсим
   QRegularExpression rxInit("([A-Z_]*)\\s([^\\s]*)\\s(.*)");
 
-  QRegularExpressionMatch rxInitMath = rxInit.match(initLine);
+  QRegularExpressionMatch rxInitMath =rxInit.match(initLine);
   if ( !rxInitMath.hasMatch() ) { //-- пришла какая-то фигня, пропускаем
     qWarning()<<"Unable understand request!";
     answer(400);
     return;
   }
 
-  if ( rxInitMath.captured(3)!="RTSP/1.0") {
+  if ( rxInitMath.captured(3)!="RTSP/1.0" ) {
     qWarning()<<"Wrong RTSP version O_o, check request!";
     answer(400);
     return;
   }
 
-  QString command = rxInitMath.captured(1);
-  QUrl reqSource = QUrl(rxInitMath.captured(2));
+  QString command =rxInitMath.captured(1);
+  QUrl reqSource =QUrl(rxInitMath.captured(2));
 
   if ( !reqSource.isValid() ) {
     qWarning()<<"Request source URL invalid!";
@@ -82,23 +82,23 @@ void Server_Client::request()
   }
 
   //-- Парсим параметры строки запроса
-  QRegularExpressionMatch rxTrackIDMatch = QRegularExpression("/track/([\\d]*)").match(reqSource.path());
-  int trackID = (rxTrackIDMatch.hasMatch())? rxTrackIDMatch.captured(1).toInt() : -1; //-- Айдишник конкретного трека
+  QRegularExpressionMatch rxTrackIDMatch =QRegularExpression("/track/([\\d]*)").match(reqSource.path());
+  int trackID =(rxTrackIDMatch.hasMatch())? rxTrackIDMatch.captured(1).toInt() : -1; //-- Айдишник конкретного трека
 
   //-- Парсим остальные пришедшие строки
   QHash<QString, QString> dataParams; //-- список параметров параметр-значение
   QRegularExpression rxParams("([^:]*):\\s(.*)");
 
   while (dataList.length()>0) {
-    QString paramStr = dataList.takeAt(0);
-    QRegularExpressionMatch rxParamsMath = rxParams.match(paramStr);
+    QString paramStr =dataList.takeAt(0);
+    QRegularExpressionMatch rxParamsMath =rxParams.match(paramStr);
     if ( rxParamsMath.hasMatch() ) {
       dataParams.insert(rxParamsMath.captured(1), rxParamsMath.captured(2));
     }
   }
 
   //-- Парсим параметр айдишник запроса
-  int cseq = dataParams.value("CSeq", "-1").toInt();
+  int cseq =dataParams.value("CSeq", "-1").toInt();
   if ( cseq==-1 ) {
     qWarning()<<"Not set CSeq O_o, check request!";
     answer(400);
@@ -142,7 +142,7 @@ void Server_Client::request()
   }
 
   if ( command=="SETUP" ) { //-- Настраивают поток
-    QString transport = dataParams.value("Transport");
+    QString transport =dataParams.value("Transport");
     QRegularExpression rxClientPorts("client_port=([\\d]*)-([\\d]*)");
 
     QRegularExpressionMatch rxClientPortsMatch = rxClientPorts.match(transport);
@@ -159,7 +159,7 @@ void Server_Client::request()
     }
 
     //-- Каждый setup это своя сессия
-    quint32 sessionId = generateSessionId();
+    quint32 sessionId =generateSessionId();
     TSessionInfo sessionInfo;
     sessionInfo.trackId =trackID;
     sessionInfo.blockSize =dataParams.value("Blocksize", QString::number(_server->blockSize())).toUInt(); //-- Максимальный размер пакета, что бы влез в MTU, см. Server_Client_Streamer::onNewPacketAvaliable

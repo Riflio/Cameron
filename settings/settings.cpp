@@ -12,6 +12,8 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
   qInfo()<<"Load settings";
 
   _settingsFile = new QFile("cameron.xml");
+  QFileInfo fileInfo(_settingsFile->fileName());
+  qInfo()<<"--path"<<fileInfo.absoluteFilePath();
 
   if ( !_settingsFile->open(QIODevice::ReadOnly | QIODevice::Text) ) {
     qWarning()<< "Settings file not opened!";

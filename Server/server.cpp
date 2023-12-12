@@ -42,7 +42,7 @@ bool Server::startServer()
 void Server::newClient()
 {
   qInfo()<<"New client";
-  Server_Client *client =new Server_Client(this, _server->nextPendingConnection(), this);
+  Server_Client *client =new Server_Client(this, _server->nextPendingConnection(), this, _lastClientID++);
   emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
   connect(client, &Server_Client::notAlive, this, &Server::delClient);
   _clients.insert(client->clientID(), client);
@@ -69,8 +69,9 @@ void Server::serverError()
 /**
 * @brief Проверяем, имеет ли пользователь доступ к управлению
 * @return
+* @todo Сделать
 */
-bool Server::userHasAccess(Server_Client * client) //TODO: Сделать
+bool Server::userHasAccess(Server_Client * client)
 {
   return true;
 }
