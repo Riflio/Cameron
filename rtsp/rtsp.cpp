@@ -180,7 +180,7 @@ int RTSP::send(METHODS method, const THeaders &headers, uint16_t channel)
   _reqID++;
 
   //-- Запишем базовую необходимую инфу
-  _sckConnect->write(QString("%1 rtsp://%2:%3 RTSP/1.0\r\n").arg(sMethod).arg(_gateway.host()).arg(_gateway.port()).toUtf8());
+  _sckConnect->write(QString("%1 rtsp://%2:%3%4 RTSP/1.0\r\n").arg(sMethod).arg(_gateway.host()).arg(_gateway.port()).arg((!_gateway.query().isEmpty())? _gateway.query().prepend("?") :"").toUtf8());
   _sckConnect->write(QString("CSeq: %1\r\n").arg(_reqID).toUtf8());
   _sckConnect->write(QString("User-Agent: %1\r\n").arg("QRTSP").toUtf8());
   if ( _authenticator.method!=QAuthenticatorPrivate::Method::None ) {
