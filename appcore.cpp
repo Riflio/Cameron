@@ -16,8 +16,10 @@ void AppCore::appStart()
 {
   qSetMessagePattern(">>>>%{time yyyyMMdd h:mm:ss.zzz} %{type} %{file} %{function} %{message}"); //-- Шаблон сообщений лога
   //qInstallMessageHandler(myMessageHandler); //-- Перенаправим вывод лога
-  _settings =new Settings(this);
 
+  qInfo()<<"Start Cameron, version"<<VERSION;
+
+  _settings =new Settings(this);
   _server =new Server(this);
   _cameras =new Cameras(this);
   _pluginsManager =new PluginsManager(this);

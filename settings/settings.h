@@ -5,10 +5,10 @@
 #include <QFile>
 #include <QXmlStreamReader>
 
-#include "Server/server.h"
-#include "Camera/cameras.h"
-#include "Plugins/pluginsmanager.h"
-#include "Plugins/PluginEventsWrapper.h"
+#include "server/server.h"
+#include "camera/cameras.h"
+#include "plugins/pluginsmanager.h"
+#include "plugins/PluginEventsWrapper.h"
 
 class Settings : public QObject
 {

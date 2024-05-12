@@ -19,21 +19,21 @@ SOURCES += main.cpp \
     sdp/sdp.cpp \
     settings/settings.cpp \
     appcore.cpp \
-    Server/server.cpp \
-    Server/server_client.cpp \
-    Camera/cameras.cpp \
-    Camera/cameras_camera.cpp \
-    Server/server_client_streamer.cpp \
-    Plugins/eventer.cpp \
-    Plugins/pluginsmanager.cpp \
-    Plugins/dynamicqobject.cpp \
+    server/server.cpp \
+    server/server_client.cpp \
+    camera/cameras.cpp \
+    camera/cameras_camera.cpp \
+    server/server_client_streamer.cpp \
+    plugins/eventer.cpp \
+    plugins/pluginsmanager.cpp \
+    plugins/dynamicqobject.cpp \
     rtp/rtp_packet.cpp \
-    Server/server_client_info.cpp
+    server/server_client_info.cpp
 
 HEADERS += \
-    Interfaces/IBuffer.h \
-    Plugins/defines.h \
-    Plugins/wpropertyinterface.h \
+    interfaces/IBuffer.h \
+    plugins/defines.h \
+    plugins/wpropertyinterface.h \
     estd/estd.h \
     rtp/rtp_packet_h264.h \
     rtp/rtp_packet_h264_unit_fu.h \
@@ -45,25 +45,25 @@ HEADERS += \
     sdp/sdp.h \
     settings/settings.h \
     appcore.h \
-    Server/server.h \
-    Server/server_client.h \
-    Camera/cameras.h \
-    Camera/cameras_camera.h \
-    Server/server_client_streamer.h \
-    Plugins/eventer.h \
-    Plugins/PluginEventsWrapper.h \
-    Plugins/PluginInterface.h \
-    Plugins/pluginsmanager.h \
-    Plugins/dynamicqobject.h \
-    Plugins/usingleton.h \
-    Interfaces/icameras_camera.h \
-    Interfaces/iserver.h \
-    Interfaces/icameras.h \
-    Interfaces/isdp.h \
-    Interfaces/irtsp_stream.h \
+    server/server.h \
+    server/server_client.h \
+    camera/cameras.h \
+    camera/cameras_camera.h \
+    server/server_client_streamer.h \
+    plugins/eventer.h \
+    plugins/PluginEventsWrapper.h \
+    plugins/PluginInterface.h \
+    plugins/pluginsmanager.h \
+    plugins/dynamicqobject.h \
+    plugins/usingleton.h \
+    interfaces/icameras_camera.h \
+    interfaces/iserver.h \
+    interfaces/icameras.h \
+    interfaces/isdp.h \
+    interfaces/irtsp_stream.h \
     rtp/rtp_packet.h \
-    Interfaces/irtp_packet.h \
-    Server/server_client_info.h
+    interfaces/irtp_packet.h \
+    server/server_client_info.h
 
 DEFINES += QT_MESSAGELOGCONTEXT
 

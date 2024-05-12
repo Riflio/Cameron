@@ -5,8 +5,8 @@
 #include <QThread>
 #include <QUdpSocket>
 
-#include "Camera/cameras_camera.h"
-#include "Interfaces/irtp_packet.h"
+#include "camera/cameras_camera.h"
+#include "interfaces/irtp_packet.h"
 
 #include <QTimer>
 

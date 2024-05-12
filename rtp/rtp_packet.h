@@ -1,7 +1,7 @@
 #ifndef RTP_PACKET_H
 #define RTP_PACKET_H
 
-#include "Interfaces/irtp_packet.h"
+#include "interfaces/irtp_packet.h"
 #include <QDebug>
 /**
 * @brief Пакет RTP

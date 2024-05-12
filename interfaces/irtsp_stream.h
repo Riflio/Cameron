@@ -2,7 +2,7 @@
 #define IRTSP_STREAM_H
 
 #include <QSharedPointer>
-#include "Interfaces/irtp_packet.h"
+#include "interfaces/irtp_packet.h"
 
 namespace NS_RSTP {
 

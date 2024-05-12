@@ -5,7 +5,7 @@
 #include <QMap>
 #include <QMultiMap>
 #include <QHostAddress>
-#include "Interfaces/isdp.h"
+#include "interfaces/isdp.h"
 
 /**
 * @brief Парсим/формируем SDP формат

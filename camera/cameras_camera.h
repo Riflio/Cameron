@@ -3,8 +3,8 @@
 
 #include <QObject>
 #include "rtsp/rtsp.h"
-#include "Interfaces/icameras_camera.h"
-#include "Plugins/PluginEventsWrapper.h"
+#include "interfaces/icameras_camera.h"
+#include "plugins/PluginEventsWrapper.h"
 #include "rtsp/rtsp_channel.h"
 
 using namespace NS_RSTP;

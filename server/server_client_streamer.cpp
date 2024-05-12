@@ -49,14 +49,13 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
 {
   if ( packet->data().isEmpty() ) { return; }
 
-  //-- Если разрмер пакета превышает BlockSize, то фрагментируем
+  //-- Если разрмер пакета превышает blockSize, то фрагментируем
   if ( packet->size()>_blockSize ) {
     switch ( packet->payloadType() ) {
       case 98: { //-- h265
         RTP_Packet_H265 *rtph265 =reinterpret_cast<RTP_Packet_H265*>(packet.data());
 
         if ( rtph265->isFUUnit() ) { //-- Фрагментируем FU пакет на несколько, что бы влезли в BlockSize
-
           RTP_Packet_H265_Unit_FU *rtph265FU =reinterpret_cast<RTP_Packet_H265_Unit_FU*>(rtph265);
 
           //-- Будем фрагментировать копию, что бы исходный не задеть, т.к. он может быть нужен другим в другом размере //TODO: Возможно имеет смысл фрагментировать не здесь, а при получении по минимальному BlockSize
@@ -73,17 +72,17 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
           const uint32_t parts =uint16_t(packetDataSize/optimalPartSize)+1;
           uint64_t partSize =uint32_t(packetDataSize/parts)+1; //-- Размер одного фрагмента
 
-          //-- Отправляем первый пакет
-          if ( srcFUPart!=RTP_Packet_H265_Unit_FU::FU_START ) { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_MIDDLE); } //-- Если исходный пакет был начальным, то первый фрагмент то же должен остаться начальным
-          partRTPh265FU.setSequence(++_sequence);
-          _socket->writeDatagram((const char *)(packetContent), partSize+commonHeaderSize, _host, _port);
-          uint64_t partContentOffset =partSize+commonHeaderSize;
-
+          //-- Отправляем пакеты
+          uint64_t partContentOffset =commonHeaderSize;
           while ( partContentOffset<packetSize) {
             //-- В заголовке прописываем нужные параметры
             partRTPh265FU.setSequence(++_sequence);
-            if ( partContentOffset+partSize>=packetSize && srcFUPart==RTP_Packet_H265_Unit_FU::FU_END ) { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_END);  } //-- Если исходный пакет был конечным, то последний фрагмент то же должен быть конечным
-            else { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_MIDDLE); } //-- Остальные фрагменты промежуточными быть должны
+            //-- Если исходный пакет был начальным, то первый фрагмент то же должен остаться начальным
+            if ( partContentOffset==commonHeaderSize && srcFUPart==RTP_Packet_H265_Unit_FU::FU_START ) { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_START); }
+            //-- Если исходный пакет был конечным, то последний фрагмент то же должен быть конечным
+            else if ( partContentOffset+partSize>=packetSize && srcFUPart==RTP_Packet_H265_Unit_FU::FU_END ) { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_END);  }
+            //-- Остальные фрагменты промежуточными быть должны
+            else { partRTPh265FU.setFUPart(RTP_Packet_H265_Unit_FU::FU_MIDDLE); }
             //-- Копируем заголовок перед данными
             std::memcpy((char *)(packetContent+partContentOffset-commonHeaderSize), packetContent, commonHeaderSize);
             //-- Отправляем
@@ -101,7 +100,7 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
       case 96: { //-- h264
         RTP_Packet_H264 *rtph264 =reinterpret_cast<RTP_Packet_H264*>(packet.data());
 
-        //-- Фрагментируем FU пакет на несколько, что бы влезли в BlockSize
+        //-- Фрагментируем FU пакет на несколько, что бы влезли в blockSize
         if ( rtph264->isFUUnit() ) {
           RTP_Packet_H264_Unit_FU *rtph264FU =reinterpret_cast<RTP_Packet_H264_Unit_FU*>(rtph264);
 
@@ -118,17 +117,17 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
           const uint32_t parts =uint16_t(packetDataSize/optimalPartSize)+1;
           uint64_t partSize =uint32_t(packetDataSize/parts)+1; //-- Размер одного фрагмента
 
-          //-- Отправляем первый пакет
-          if ( srcFUPart!=RTP_Packet_H264_Unit_FU::FU_START ) { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_MIDDLE); } //-- Если исходный пакет был начальным, то первый фрагмент то же должен остаться начальным
-          partRTPh264FU.setSequence(++_sequence);
-          _socket->writeDatagram((const char *)(packetContent), partSize+commonHeaderSize, _host, _port);
-          uint64_t partContentOffset =partSize+commonHeaderSize;
-
+          //-- Отправляем пакеты
+          uint64_t partContentOffset =commonHeaderSize;
           while ( partContentOffset<packetSize) {
             //-- В заголовке прописываем нужные параметры
             partRTPh264FU.setSequence(++_sequence);
-            if ( partContentOffset+partSize>=packetSize && srcFUPart==RTP_Packet_H264_Unit_FU::FU_END ) { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_END);  } //-- Если исходный пакет был конечным, то последний фрагмент то же должен быть конечным
-            else { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_MIDDLE); } //-- Остальные фрагменты промежуточными быть должны
+            //-- Если исходный пакет был начальным, то первый фрагмент то же должен остаться начальным
+            if ( partContentOffset==commonHeaderSize && srcFUPart==RTP_Packet_H264_Unit_FU::FU_START ) { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_START); }
+            //-- Если исходный пакет был конечным, то последний фрагмент то же должен быть конечным
+            else if ( partContentOffset+partSize>=packetSize && srcFUPart==RTP_Packet_H264_Unit_FU::FU_END ) { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_END);  }
+            //-- Остальные фрагменты промежуточными быть должны
+            else { partRTPh264FU.setFUPart(RTP_Packet_H264_Unit_FU::FU_MIDDLE); }
             //-- Копируем заголовок перед данными
             std::memcpy((char *)(packetContent+partContentOffset-commonHeaderSize), packetContent, commonHeaderSize);
             //-- Отправляем

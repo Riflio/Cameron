@@ -3,11 +3,11 @@
 
 #include <QObject>
 #include <QTcpServer>
-#include "Interfaces/iserver.h"
+#include "interfaces/iserver.h"
 #include "server_client.h"
 
-#include "Camera/cameras.h"
-#include "Plugins/PluginEventsWrapper.h"
+#include "camera/cameras.h"
+#include "plugins/PluginEventsWrapper.h"
 
 /**
 * @brief The Server class

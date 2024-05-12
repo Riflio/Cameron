@@ -4,8 +4,8 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QUrl>
-#include "Camera/cameras.h"
-#include "Server/server_client_streamer.h"
+#include "camera/cameras.h"
+#include "server/server_client_streamer.h"
 #include "server_client_info.h"
 
 /**

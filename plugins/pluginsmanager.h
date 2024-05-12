@@ -5,11 +5,11 @@
 #include <QDir>
 #include <QPluginLoader>
 
-#include "Plugins/defines.h"
+#include "plugins/defines.h"
 
-#include "Plugins/PluginInterface.h"
-#include "Plugins/PluginEventsWrapper.h"
-#include "Plugins/eventer.h"
+#include "plugins/PluginInterface.h"
+#include "plugins/PluginEventsWrapper.h"
+#include "plugins/eventer.h"
 
 class PluginsManager : public PluginEventsBase
 {

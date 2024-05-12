@@ -5,8 +5,8 @@
 #include <QUdpSocket>
 #include <QTimer>
 
-#include "Interfaces/irtp_packet.h"
-#include "Interfaces/irtsp_stream.h"
+#include "interfaces/irtp_packet.h"
+#include "interfaces/irtsp_stream.h"
 
 namespace NS_RSTP {
 

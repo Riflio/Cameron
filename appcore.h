@@ -4,9 +4,9 @@
 #include <QObject>
 
 #include "settings/settings.h"
-#include "Camera/cameras.h"
-#include "Server/server.h"
-#include "Plugins/pluginsmanager.h"
+#include "camera/cameras.h"
+#include "server/server.h"
+#include "plugins/pluginsmanager.h"
 
 class AppCore : public QObject
 {
@@ -16,6 +16,8 @@ public:
   ~AppCore();
 
   static void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg);
+
+  const QString VERSION ="1.0.0";
 
 signals:
 

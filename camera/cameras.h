@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "cameras_camera.h"
-#include "Interfaces/icameras.h"
+#include "interfaces/icameras.h"
 #include <QCoreApplication>
 
 /**
