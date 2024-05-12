@@ -6,6 +6,11 @@ RTP_Packet::RTP_Packet(const QByteArray &data): _data(data)
   if ( _data.isEmpty() ) { _data.resize(RTP_HEADER_SIZE); } //-- Если не задан пакет, то сразу обеспечим минимальный размер для чтения основных полей заголовка
 }
 
+
+RTP_Packet::RTP_Packet(size_t size): _data(size, Qt::Uninitialized)
+{
+}
+
 /**
 * @brief Отдаём версию RTP пакета
 * @return

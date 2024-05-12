@@ -8,10 +8,19 @@ namespace NS_RSTP {
 RTSP_Channel::RTSP_Channel(RTSP * rtsp): QObject(rtsp), _rtsp(rtsp), _id(_rtsp->channelsCount())
 {
   qDebug()<<"RTSP_Channel created!";
-  _streamer =new RTSP_Stream(this);
-  connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected);
-  connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected);
-  connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError);
+
+  _streamer =new RTSP_Stream();
+  _streamerThread =new QThread(this);
+  _streamer->moveToThread(_streamerThread);
+
+  //-- Как только поток запустится запускаем стример
+  connect(_streamerThread, &QThread::started, _streamer, &RTSP_Stream::start);
+  //-- Как только стример сам пожелает завершится завершаем сначала поток
+  connect(_streamer, &RTSP_Stream::completed, _streamerThread, &QThread::quit);
+
+  connect(_streamer, &RTSP_Stream::connected, this, &RTSP_Channel::connected, Qt::QueuedConnection);
+  connect(_streamer, &RTSP_Stream::disconnected, this, &RTSP_Channel::disconnected, Qt::QueuedConnection);
+  connect(_streamer, &RTSP_Stream::errored, this, &RTSP_Channel::onStreamError, Qt::QueuedConnection);
 
   _aliveTimer =new QTimer(this);
   _aliveTimer->setInterval(50000);
@@ -40,9 +49,9 @@ void RTSP_Channel::play()
 {
   qInfo()<<"play";
   if ( _aliveTimer->isActive() ) { return; } //-- Мы уже запущены
-  _streamer->start(QThread::HighPriority);
   _alived = true;
   _aliveTimer->start();
+  _streamerThread->start(QThread::NormalPriority);
 
   RTSP::THeaders headers;
   headers.append(qMakePair("Session", QString::number(session()).toUtf8()));
@@ -81,11 +90,17 @@ void RTSP_Channel::onStreamError()
 * @brief Отсылаем запрос на завершение вещания
 */
 void RTSP_Channel::teardown()
-{    
-  if ( !_aliveTimer->isActive() ) { return; } //-- Если мы не были запущены
+{
+  if ( _streamerThread->isRunning() ) {
+    _streamerThread->quit();
+    _streamerThread->wait();
+  }
+
+  //-- Если мы не запущены (ошибка или вообще не запускались), дальше делать нечего
+  if ( !_aliveTimer->isActive() ) { return; }
   qInfo()<<"teardown";
 
-  _aliveTimer->stop();
+  _aliveTimer->stop();  
 
   RTSP::THeaders headers;
   headers.append(qMakePair("Session", QString::number(session()).toUtf8()));
@@ -154,6 +169,8 @@ RTSP_Stream *RTSP_Channel::getStreamer()
 RTSP_Channel::~RTSP_Channel()
 {
   teardown();
+  _streamerThread->deleteLater();
+  delete _streamer; //-- Поток уже остановлен, так что сразу удаляемся
   qDebug()<<"";
 }
 

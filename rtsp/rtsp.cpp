@@ -6,7 +6,7 @@
 
 namespace NS_RSTP {
 
-RTSP::RTSP(QObject *parent) : QObject(parent), _reqID(0)
+RTSP::RTSP(QObject *parent): QObject(parent), _reqID(0)
 {
   _sckConnect =new QTcpSocket(this);
   _sdp =new SDP(this);

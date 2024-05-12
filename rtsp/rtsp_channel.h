@@ -58,6 +58,7 @@ private:
   long _session =0;
   SDP::sMedia *_sdpMedia =nullptr;
   QTimer *_aliveTimer =nullptr;
+  QThread *_streamerThread =nullptr;
   RTSP_Stream *_streamer =nullptr;
   bool _alived =false;
 };

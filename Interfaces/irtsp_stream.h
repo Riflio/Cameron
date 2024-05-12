@@ -9,8 +9,8 @@ namespace NS_RSTP {
 class IRTSP_Stream
 {
 public:
+  virtual ~IRTSP_Stream() {};
   virtual void newPacketAvaliable(QSharedPointer<IRTP_Packet> packet) =0;
-
 };
 
 }

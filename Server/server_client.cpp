@@ -6,7 +6,7 @@
 
 QMap<quint32, Server_Client::TSessionInfo> Server_Client::_sessions;
 
-Server_Client::Server_Client(QObject *parent, QTcpSocket * socket, Server * server , int clientID) : Server_Client_Info(parent), _socket(socket), _server(server), _id(clientID)
+Server_Client::Server_Client(QObject *parent, QTcpSocket *socket, Server *server, int clientID): Server_Client_Info(parent), _socket(socket), _server(server), _id(clientID)
 {
   connect(_socket, &QTcpSocket::readyRead, this, &Server_Client::request);
 
@@ -25,11 +25,12 @@ int Server_Client::clientID()
 }
 
 /**
-* @brief Возникли ошибки с камерой
+* @brief Возникли ошибки с камерой (соответственно с потоком то же)
 */
 void Server_Client::onCameraErrored()
 {
-  deleteLater(); //TODO: Чё делать то??
+  //-- Пока что удаляемся //TODO: Остановить у идалить стример, перезапустить камеру, как перезапустится создать и запустить стример. Добавить таймаут, после которого клиента удалять если не получилось.
+  deleteLater();
 }
 
 /**
@@ -118,7 +119,7 @@ void Server_Client::request()
   //-- Проверим, залогинен ли пользователь, т.к. дальше без авторизации не обрабатываем никакие команды
   if ( !isActual() ) {
     if ( dataParams.contains("Authorization") ) { //-- Если в заголовках есть "Authorization:", значит нужно распарсить по нему
-      QStringList authData = QString(QByteArray::fromBase64(dataParams.value("Authorization").mid(6, -1).toUtf8())).split(':');
+      QStringList authData =QString(QByteArray::fromBase64(dataParams.value("Authorization").mid(6, -1).toUtf8())).split(':');
       if ( authData.count()!=2 ) {
         qWarning()<<"Wrong auth data syntax!";
         answer(401, cseq);
@@ -209,12 +210,12 @@ void Server_Client::answerOPTIONS(int cseq)
 */
 void Server_Client::answerDESCRIBE(int cseq, int trackId)
 {
-  SDP * sdp = dynamic_cast<SDP*>(_server->_cameras->getTotalSDP(trackId));
-  sdp->origin.creatorName = "Cameron";
-  sdp->origin.netType = "IN";
-  sdp->origin.host = _server->_host;
-  sdp->origin.sessionID = 38990265062388; //TODO: Выяснить, что сюда сувать
-  sdp->origin.sessionVer = 38990265062388;
+  SDP *sdp =dynamic_cast<SDP*>(_server->_cameras->getTotalSDP(trackId));
+  sdp->origin.creatorName ="Cameron";
+  sdp->origin.netType ="IN";
+  sdp->origin.host =_server->_host;
+  sdp->origin.sessionID =38990265062388; //TODO: Выяснить, что сюда сувать
+  sdp->origin.sessionVer =38990265062388;
 
   QByteArray sdpData;
   if ( !sdp->make(sdpData) ) { //TODO: кэшировать
@@ -223,7 +224,7 @@ void Server_Client::answerDESCRIBE(int cseq, int trackId)
     return;
   }
 
-  int sdpSize = sdpData.size();
+  int sdpSize =sdpData.size();
 
   sdpData.prepend("\r\n");
   sdpData.prepend(QString("Content-Length: %1\r\n").arg(sdpSize).toUtf8());
@@ -243,19 +244,14 @@ void Server_Client::answerPLAY(int cseq, uint32_t sessionId)
   qInfo()<<"Answer PLAY";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
 
-  Server_Client_Streamer * streamer = _streamers.value(_sessions[sessionId].trackId);
-
-  if ( streamer==nullptr ) {
+  if ( !_streamers.contains(_sessions[sessionId].trackId) ) {
     qWarning()<<"Streamer not exists!";
     answer(500, cseq);
     return;
   }
 
-  if ( !streamer->start() ) {
-    qWarning()<<"Streamer not started!";
-    answer(500, cseq);
-    return;
-  }
+  TServerClientStreamerThread streamer =_streamers.value(_sessions[sessionId].trackId);
+  streamer.thread->start(); //TODO: Может стоит дождаться тут фактического запуска?
 
   QByteArray data;  
   data.append(QString("Range: npt=0.000-").append("\r\n").toUtf8());
@@ -273,15 +269,14 @@ void Server_Client::answerTEARDOWN(int cseq, uint32_t sessionId)
   qDebug()<<"Answer TEARDOWN";
   if ( !checkSessionExists(sessionId) ) { qWarning()<<"Session not exists. Check request."; answer(404, cseq); return; }
 
-  Server_Client_Streamer * streamer = _streamers.value(_sessions[sessionId].trackId);
-
-  if ( streamer==nullptr ) {
+  if ( !_streamers.contains(_sessions[sessionId].trackId) ) {
     qWarning()<<"Streamer not exists!";
     answer(500, cseq);
     return;
   }
 
-  streamer->stop();
+  TServerClientStreamerThread streamer =_streamers.value(_sessions[sessionId].trackId);
+  streamer.thread->quit();
 
   QByteArray data;
   answer(200, cseq, data, sessionId);
@@ -316,14 +311,30 @@ void Server_Client::answerSETUP(int cseq, int videoPort, int audioPort, uint32_t
     return;
   }
 
-  Server_Client_Streamer *clientStreamer =new Server_Client_Streamer(this, _socket->peerAddress(), videoPort, camera->id(), camera->getStreamer());
-  clientStreamer->setBlockSize(session.blockSize);
+  //-- Если будут ошибки с камерой, нужно отреагировать
+  connect(camera, &Cameras_Camera::errored, this, &Server_Client::onCameraErrored, Qt::UniqueConnection);
 
-  connect(camera, &Cameras_Camera::errored, this, &Server_Client::onCameraErrored); //-- Если будут ошибки с камерой, нужно отреагировать
-  connect(clientStreamer, &Server_Client_Streamer::destroyed, camera, &Cameras_Camera::stop); //-- Как только стример удалится - уведомляем камеру, что можно попробовать остановить вещание
+  //-- Подготавливаем стример клиента и запоминаем его среди всех
+  TServerClientStreamerThread &clientStreamer =_streamers[camera->id()];
+  clientStreamer.thread =new QThread(this);
+  clientStreamer.streamer =new Server_Client_Streamer(nullptr, _socket->peerAddress(), videoPort, camera->id(), camera->getStreamer());
+  clientStreamer.streamer->moveToThread(clientStreamer.thread);
+  clientStreamer.streamer->setBlockSize(session.blockSize);
 
-  _streamers[clientStreamer->id()] =clientStreamer;
+  //-- Как только поток запустится запускаем стример
+  connect(clientStreamer.thread, &QThread::started, clientStreamer.streamer, &Server_Client_Streamer::start);
+  //-- Как только стример сам пожелает завершится завершаем сначала поток
+  connect(clientStreamer.streamer, &Server_Client_Streamer::completed, clientStreamer.thread, &QThread::quit);
+  //-- Как только поток завершается останавливаем камеру, удаляем из общего списка стример и его самого
+  connect(clientStreamer.thread, &QThread::finished, clientStreamer.streamer, [this, &clientStreamer, camera](){
+    int streamerId =clientStreamer.streamer->id();
+    clientStreamer.streamer->deleteLater();
+    clientStreamer.thread->deleteLater();
+    _streamers.remove(streamerId);
+    QMetaObject::invokeMethod(camera, "stop"); //-- Мы в другом потоке
+  });
 
+  //-- Отвечаем, что готовы
   QByteArray data;
   data.append(QString("Transport: RTP/AVP;unicast;destination=%1;source=%2;client_port=%3-%4\r\n").arg(
     _socket->peerAddress().toString(),
@@ -466,5 +477,10 @@ bool Server_Client::loginUser(QString uName, QString uPass)
 
 Server_Client::~Server_Client()
 {
+  //-- Останавливаем всех стримеров
+  foreach (TServerClientStreamerThread clientStreamer, _streamers) {
+    if ( clientStreamer.thread!=nullptr && clientStreamer.thread->isRunning() ) { clientStreamer.thread->quit(); clientStreamer.thread->wait(); }
+  }
+
   qDebug()<<"";
 }

@@ -1,4 +1,5 @@
 #include "cameras_camera.h"
+#include <QCoreApplication>
 
 Cameras_Camera::Cameras_Camera(QObject *parent): QObject(parent)
 {
@@ -102,9 +103,9 @@ bool Cameras_Camera::setup()
   RTSP_Channel *channel =_rtsp->getChannel(_channel);
   if ( channel==nullptr ) { qWarning()<<"Channel"<<channel->id()<<"not found!"; return false; }
 
-  connect(channel, &RTSP_Channel::setuped, this, &Cameras_Camera::onSetuped);
-  connect(channel, &RTSP_Channel::played, this, &Cameras_Camera::onPlayed);
-  connect(channel, &RTSP_Channel::toTeardown, this, &Cameras_Camera::onTeardowned);
+  connect(channel, &RTSP_Channel::setuped, this, &Cameras_Camera::onSetuped, Qt::UniqueConnection);
+  connect(channel, &RTSP_Channel::played, this, &Cameras_Camera::onPlayed, Qt::UniqueConnection);
+  connect(channel, &RTSP_Channel::toTeardown, this, &Cameras_Camera::onTeardowned, Qt::UniqueConnection);
 
   channel->setup(_streamPort);
 
@@ -139,15 +140,17 @@ bool Cameras_Camera::play()
 
 /**
 * @brief Прекращаем вещание
+* @param force - завершить принудительно (да же если кто-то использует)
 * @return
 */
-bool Cameras_Camera::stop()
+bool Cameras_Camera::stop(bool force)
 {
   qInfo()<<"Camera stop, clients count:"<<_clientsCount;
   _clientsCount--;
 
   if ( _status&S_PLAYED ) { //-- Если запущена
-    if ( _clientsCount<=0 ) { //-- И нет больше клиентов подключившихся
+    //-- И принудительная остановка или нет больше клиентов подключившихся
+    if ( force || _clientsCount<=0 ) {
       _rtsp->getChannel(_channel)->teardown();
       _status =S_NONE;
       _clientsCount =0;
@@ -171,21 +174,32 @@ bool Cameras_Camera::go()
   if ( !start() ) { return false; }
 
   //-- Ждём, пока приконнектится //TODO: Заменить на QEventLoop
-  while ( !(_status & S_CONNECTED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
+  while ( !(_status&S_CONNECTED) && !(_status&S_ERROR) ) { QCoreApplication::processEvents(); }
 
   //-- Подготавливаем камеру к вещанию
   if ( !setup() ) { return false; }
 
   //-- Ждём, пока поток камеры настраивается
-  while ( !(_status & S_SETUPED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
+  while ( !(_status&S_SETUPED) && !(_status&S_ERROR) ) { QCoreApplication::processEvents(); }
 
   //-- Запускаем вещание
   if ( !play() ) { return false; }
 
   //-- И ждём, пока начнётся
-  while ( !(_status & S_PLAYED) && !(_status & S_ERROR) ) { QCoreApplication::processEvents(); }
+  while ( !(_status&S_PLAYED) && !(_status&S_ERROR) ) { QCoreApplication::processEvents(); }
 
-  return !(_status & S_ERROR);
+  return !(_status&S_ERROR);
+}
+
+/**
+* @brief Сбрасываем состояние
+* @return
+*/
+bool Cameras_Camera::reset()
+{
+  if ( _status&S_PLAYED ) { return stop(true); }
+  if ( _status&S_ERROR ) { _status =S_NONE; return true; }
+  return true;
 }
 
 /**

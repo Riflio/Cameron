@@ -5,7 +5,6 @@
 #include <QThread>
 #include <QUdpSocket>
 
-#include "Plugins/wthread.h"
 #include "Camera/cameras_camera.h"
 #include "Interfaces/irtp_packet.h"
 
@@ -14,19 +13,22 @@
 /**
 * @brief Отсылаем клиенту сервера фреймы
 */
-class Server_Client_Streamer : public WThread
+class Server_Client_Streamer: public QObject
 {
     Q_OBJECT
 public:
-  explicit Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id,  IRTSP_Stream * streamer);
+  explicit Server_Client_Streamer(QObject *parent, QHostAddress host, int port, int id,  IRTSP_Stream *streamer);
   ~Server_Client_Streamer();
-
-  void loop() override;
-  bool onStarted() override;
 
   int id();
   uint32_t blockSize();
   void setBlockSize(uint32_t blockSize);
+
+signals:
+  void completed();
+
+public slots:
+  void start();
 
 private slots:
   void onNewPacketAvaliable(QSharedPointer<IRTP_Packet> packet);
@@ -36,8 +38,8 @@ private:
   int _port;
   int _id;
 
-  IRTSP_Stream * _streamer =nullptr;
-  QUdpSocket * _socket =nullptr;
+  IRTSP_Stream *_streamer =nullptr;
+  QUdpSocket *_socket =nullptr;
 
   uint32_t _blockSize =1400; //-- Максимальный размер пакета, что бы влез в MTU
   uint16_t _sequence =0; //-- Будем использовать свою нумерацию пакетов //FIXME: Random init

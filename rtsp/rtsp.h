@@ -17,7 +17,7 @@ namespace NS_RSTP {
 * @brief Управляем каналами вещания камеры
 */
 class RTSP_Channel;
-class RTSP : public QObject
+class RTSP: public QObject
 {
   Q_OBJECT
 public:

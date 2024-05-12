@@ -6,17 +6,17 @@
 */
 
 struct TBufferInfo {
-    int cur;
-    int fullnes;
-    int size;
+  int cur;
+  int fullnes;
+  int size;
 };
 
 template<class BufType>
 class IBuffer
 {
 public:
-    virtual TBufferInfo info() const =0;
-    virtual const BufType * at(int idx) =0;
+  virtual TBufferInfo info() const =0;
+  virtual const BufType *at(int idx) =0;
 };
 
 #endif // IBUFFER_H

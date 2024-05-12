@@ -2,7 +2,7 @@
 #define RTP_PACKET_H
 
 #include "Interfaces/irtp_packet.h"
-
+#include <QDebug>
 /**
 * @brief Пакет RTP
 */
@@ -10,7 +10,8 @@ class RTP_Packet: public IRTP_Packet
 {
 public:
   RTP_Packet(const QByteArray &data =QByteArray());
-  virtual ~RTP_Packet() {}
+  RTP_Packet(size_t size);
+  ~RTP_Packet() {}
 
   uint8_t version() const override;
   void setVersion(uint8_t version) override;
@@ -54,7 +55,6 @@ protected:
   const int RTP_HEADER_SIZE =12; //-- Минимально возможный размер заголовка RTP пакета
   void setHasExtension(bool hasExtension) override;
   void setCSRCCount(uint8_t CSRCCount) override;
-
   QByteArray _data;
 
 private:  

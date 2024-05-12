@@ -9,7 +9,6 @@ CONFIG += console
 
 
 SOURCES += main.cpp \
-    Plugins/wthread.cpp \
     rtp/rtp_packet_h264.cpp \
     rtp/rtp_packet_h264_unit_fu.cpp \
     rtp/rtp_packet_h265.cpp \
@@ -62,12 +61,9 @@ HEADERS += \
     Interfaces/icameras.h \
     Interfaces/isdp.h \
     Interfaces/irtsp_stream.h \
-    Interfaces/ithread.h \
     rtp/rtp_packet.h \
     Interfaces/irtp_packet.h \
-    Plugins/wthread.h \
-    Server/server_client_info.h \
-    Interfaces/ithread.h
+    Server/server_client_info.h
 
 DEFINES += QT_MESSAGELOGCONTEXT
 

@@ -15,7 +15,7 @@
 * и т.д.
 */
 class Server;
-class Server_Client : public Server_Client_Info
+class Server_Client: public Server_Client_Info
 {
   Q_OBJECT
 public:
@@ -49,7 +49,12 @@ private:
   void answerGETPARAMETER(int cseq, quint32 sessionId);
   void answer(int statusCode, int cseq =0, QByteArray data ="", uint32_t sessionId =0, bool lastRN =true);
 
-  QMap<int, Server_Client_Streamer*> _streamers; //-- <cameraId, Server_Client_Streamer*> Стримеры, которые запустил этот клиент
+  struct TServerClientStreamerThread {
+    QThread *thread =nullptr;
+    Server_Client_Streamer *streamer =nullptr;
+  };
+
+  QMap<int, TServerClientStreamerThread> _streamers; //-- <cameraId, TServerClientStreamerThread> Стримеры, которые запустил этот клиент
 
   void aliveTimeOver();
   QTimer *_aliveTimeOverTimer;

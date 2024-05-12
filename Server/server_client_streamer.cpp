@@ -14,8 +14,7 @@
 * @param id - айдишник. Соответствует камере.
 * @param streamer
 */
-Server_Client_Streamer::Server_Client_Streamer(QObject * parent, QHostAddress host, int port, int id, IRTSP_Stream * streamer)
-    : WThread(parent, "Client stream"), _host(host), _port(port), _id(id), _streamer(streamer)
+Server_Client_Streamer::Server_Client_Streamer(QObject *parent, QHostAddress host, int port, int id, IRTSP_Stream *streamer): QObject(parent), _host(host), _port(port), _id(id), _streamer(streamer)
 {
 
 }
@@ -158,19 +157,10 @@ void Server_Client_Streamer::onNewPacketAvaliable(QSharedPointer<IRTP_Packet> pa
 
 }
 
-/**
-* @brief Основной цикл потока
-*/
-void Server_Client_Streamer::loop()
-{    
-
-}
-
-bool Server_Client_Streamer::onStarted()
+void Server_Client_Streamer::start()
 {
-  if (_socket==nullptr ) { _socket =new QUdpSocket(this); }
+  if ( _socket==nullptr ) { _socket =new QUdpSocket(this); }
   connect(dynamic_cast<RTSP_Stream*>(_streamer), &RTSP_Stream::newPacketAvaliable, this, &Server_Client_Streamer::onNewPacketAvaliable, Qt::QueuedConnection);
-  return WThread::onStarted();
 }
 
 Server_Client_Streamer::~Server_Client_Streamer()

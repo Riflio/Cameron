@@ -13,35 +13,38 @@ using namespace NS_RSTP;
 * @brief Конкретная камера, точнее её один поток.
 * Если у камеры несколько потоков, то каждый должен быть представлен камерой в настройках
 */
-class Cameras_Camera : public QObject, public ICameras_Camera
+class Cameras_Camera: public QObject, public ICameras_Camera
 {
     Q_OBJECT
 public:
-  explicit Cameras_Camera(QObject *parent = nullptr);
+  explicit Cameras_Camera(QObject *parent =nullptr);
   virtual ~Cameras_Camera();
 
-  bool setSettings(QString url ="", int id =-1, int channel =0, int streamPort =4041);
+  bool setSettings(QString url ="", int id =-1, int channel =0, int streamPort =4041) override;
 
-  QString url() { return _url; }
+  QString url() override { return _url; }
 
-  int id();
-  int status();
-  bool start();
-  bool setup();
-  bool play();
-  bool stop();
-  bool go();
+  int id() override;
+  int status() override;
 
-  ISDP::sMedia *getSDPMedia();
-  IRTSP_Stream *getStreamer();
+  ISDP::sMedia *getSDPMedia() override;
+  IRTSP_Stream *getStreamer() override;
 
 signals:
-  void errored();
-  void connected();
-  void disconnected();
-  void setuped();
-  void played();
-  void teardowned();
+  void errored() override;
+  void connected() override;
+  void disconnected() override;
+  void setuped() override;
+  void played() override;
+  void teardowned() override;
+
+public slots:
+  bool start() override;
+  bool setup() override;
+  bool play() override;
+  bool stop(bool force =false) override;
+  bool go() override;
+  bool reset() override;
 
 protected slots:
   void onCameraConnected();

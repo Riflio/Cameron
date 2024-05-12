@@ -8,25 +8,21 @@
 
 class PluginInterface
 {
-
 public:
-    virtual ~PluginInterface() {}
+  virtual ~PluginInterface() {}
 
-    virtual void Init() =0;
+  virtual void Init() =0;
 
-    virtual void InstallPlugin() =0;
-    virtual void UnInstallPlugin() =0;
+  virtual void InstallPlugin() =0;
+  virtual void UnInstallPlugin() =0;
 
-    QVariant ARG(void * p) { return QVariant::fromValue((void *)p); }
-
-
+  QVariant ARG(void * p) { return QVariant::fromValue((void *)p); }
 
 public slots:
 
-
 signals:
-    void doAction(QString, QVariantList);
-    void addAction(QString, QObject *, const char *, Qt::ConnectionType);
+  void doAction(QString, QVariantList);
+  void addAction(QString, QObject *, const char *, Qt::ConnectionType);
 };
 
 Q_DECLARE_INTERFACE(PluginInterface, "com.Cameron.Application.PluginInterface/1.0")
