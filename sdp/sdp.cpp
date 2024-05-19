@@ -19,63 +19,61 @@ bool SDP::parse(QByteArray data)
 
   qDeleteAll(medias);
   medias.clear();
-  origin = sOrigin();
+  origin =sOrigin();
 
-  QString dataText = data;
+  QString dataText =data;
 
-  QList<QString> dataList = dataText.split("\r\n");
+  QList<QString> dataList =dataText.split("\r\n");
 
   QRegularExpression rxc("^([a-z])=(.*)", QRegularExpression::CaseInsensitiveOption); //-- Парсим построчно на команду и её выражение
   QRegularExpression rxa("([^:]+):([^\\s]*)(.*)", QRegularExpression::CaseInsensitiveOption); //-- Парсим выражение на отдельные параметр - значение - дополнительные параметры
   QRegularExpression rxap("([^=\\s]+)=([^;]+)(;|$)", QRegularExpression::CaseInsensitiveOption); //-- Парсим выражение дополнительных параметров на отдельные параметр - значение
 
-  int mediaIndex = -1; //-- Что бы знать, к какой медиа записи относяться команды
+  int mediaIndex =-1; //-- Что бы знать, к какой медиа записи относяться команды
 
   //TODO: Доделать остальные команды
   foreach (QString dataStr, dataList) {
 
-    QRegularExpressionMatch rxcMath = rxc.match(dataStr);
+    QRegularExpressionMatch rxcMath =rxc.match(dataStr);
 
     if ( rxcMath.hasMatch() ) {
-
-      QString command = rxcMath.captured(1);
-      QString term = rxcMath.captured(2);
+      QString command =rxcMath.captured(1);
+      QString term =rxcMath.captured(2);
 
       if ( command=="v" ) {
-        origin.version = term.toInt();
+        origin.version =term.toInt();
       }
 
       if ( command=="s" ) {
-        origin.creatorName = term;
+        origin.creatorName =term;
       }
 
       if ( command=="m" ) {
         mediaIndex++;
-        QList<QString> params = term.split(" "); //-- Разделяем выражение на отдельные значения по пробелу
+        QList<QString> params =term.split(" "); //-- Разделяем выражение на отдельные значения по пробелу
 
-        sMedia * media = new sMedia();
-        media->type = (params.takeAt(0)=="video")? MT_VIDEO : MT_AUDIO;
-        media->port = params.takeAt(0).toInt();
-        media->profile = params.takeAt(0);
-        media->codecs = params; //-- Всё оставшееся
+        sMedia *media =new sMedia();
+        media->type =(params.takeAt(0)=="video")? MT_VIDEO : MT_AUDIO;
+        media->port =params.takeAt(0).toInt();
+        media->profile =params.takeAt(0);
+        media->codecs =params; //-- Всё оставшееся
         medias.append(media);
       }
 
       if ( command=="a" ) {
-        sAttribute * attribute = new sAttribute();
+        sAttribute *attribute =new sAttribute();
 
-        QRegularExpressionMatch rxaMath = rxa.match(term);
+        QRegularExpressionMatch rxaMath =rxa.match(term);
 
         if ( rxaMath.hasMatch() ) { //-- Если есть раздельные параметр-значение
-          attribute->name = rxaMath.captured(1);
-          attribute->value = rxaMath.captured(2);
-          QString extraParams = rxaMath.captured(3);
+          attribute->name =rxaMath.captured(1);
+          attribute->value =rxaMath.captured(2);
+          QString extraParams =rxaMath.captured(3);
 
-          if (extraParams.length()>0) {
+          if ( extraParams.length()>0 ) {
+            QRegularExpressionMatch rxapMath =rxap.match(extraParams+";");
 
-            QRegularExpressionMatch rxapMath = rxap.match(extraParams+";");
-
-            int pos = rxapMath.capturedStart(); //-- Ищем первое совпадение
+            int pos =rxapMath.capturedStart(); //-- Ищем первое совпадение
             if ( pos==-1 )  {//-- Первого нет, значит только одно значение
               attribute->parameters.insert(extraParams, extraParams);
             } else { //-- Первое есть, парсим его и ищем дальше
@@ -87,7 +85,7 @@ bool SDP::parse(QByteArray data)
             }
           }
         } else { //-- Выражение состоит лишь из одного названия параметра
-          attribute->name = term;
+          attribute->name =term;
         }
 
         //-- Решаем что делать с атрибутом
@@ -105,18 +103,18 @@ bool SDP::parse(QByteArray data)
 * @param data
 * @return
 */
-bool SDP::make(QByteArray & data)
+bool SDP::make(QByteArray &data)
 {
-  QString rn= "\r\n";
-    auto makeAttributes = [=](const QMap<QString, sAttribute*> & attribytes)->QString { //-- Формирует атрибуты базовые, медиазаписи и т.д.
+  QString rn ="\r\n";
+  auto makeAttributes =[=](const QMap<QString, sAttribute*> & attribytes)->QString { //-- Формирует атрибуты базовые, медиазаписи и т.д.
     QString at;
     QMap<QString, SDP::sAttribute*>::const_iterator j;
-    for (j=attribytes.begin(); j!= attribytes.end(); ++j) {
-      sAttribute * a = j.value();
+    for (j =attribytes.begin(); j!=attribytes.end(); ++j) {
+      sAttribute *a =j.value();
       //-- Пошли по параметрам атрибута медиа записи
       QStringList p;
       QMap<QString, QString>::iterator l;
-      for (l=a->parameters.begin(); l!= a->parameters.end(); ++l) {
+      for (l =a->parameters.begin(); l!= a->parameters.end(); ++l) {
         if ( l.key()==l.value() ) { //-- Когда название равно значению нужно писать лишь значение
           p.append(l.value());
         } else {
@@ -136,7 +134,7 @@ bool SDP::make(QByteArray & data)
   };
 
   QString dt;
-  QString host = QString("%1 %2 %3").arg(origin.netType).arg((origin.host.protocol()==QAbstractSocket::IPv4Protocol)?"IP4":"IP6").arg(origin.host.toString());
+  QString host =QString("%1 %2 %3").arg(origin.netType).arg((origin.host.protocol()==QAbstractSocket::IPv4Protocol)?"IP4":"IP6").arg(origin.host.toString());
 
   //-- Пишем базовое
   dt.append(QString("v=%1").arg(origin.version)).append(rn);
@@ -148,15 +146,15 @@ bool SDP::make(QByteArray & data)
 
   //-- Пошли по медиа-записям
   QList<sMedia*>::iterator i;
-  for (i=medias.begin(); i!= medias.end(); ++i) {
-    sMedia* m = *i;
+  for (i =medias.begin(); i!= medias.end(); ++i) {
+    sMedia *m =*i;
     dt.append(QString("m=%1 %2 %3 %4").arg( (m->type==MT_VIDEO)?"video":(m->type==MT_AUDIO)?"audio":"").arg(m->port).arg(m->profile).arg(m->codecs.join(" ")) ).append(rn);
     //-- Формируем атрибуты
     dt.append( makeAttributes( m->attribytes ) );
   }
 
-  //-- Да пошло оно всё, заебало
-  data = QByteArray(dt.toUtf8());
+  //-- Закончили
+  data =QByteArray(dt.toUtf8());
   return true;
 }
 

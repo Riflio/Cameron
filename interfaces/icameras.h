@@ -1,17 +1,17 @@
 #ifndef ICAMERAS_H
 #define ICAMERAS_H
 
-#include "icameras_camera.h"
+#include "icamera.h"
 #include <QHash>
 
-typedef QHash<int, ICameras_Camera*> TCams;
+typedef QHash<int, ICamera*> TCams;
 
 class ICameras
 {
 public:
   virtual ~ICameras() {}
-  virtual ICameras_Camera *newCam(int id) =0;
-  virtual ICameras_Camera *getCam(int id) =0;
+  virtual ICamera *newCam(int id) =0;
+  virtual ICamera *getCam(int id) =0;
   virtual TCams getCams() =0;
   virtual ISDP *getTotalSDP(int trackId) =0;
 };

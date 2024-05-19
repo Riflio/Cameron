@@ -3,12 +3,13 @@
 
 #include <QObject>
 
+#include "interfaces/iqcameron.h"
 #include "settings/settings.h"
 #include "camera/cameras.h"
 #include "server/server.h"
 #include "plugins/pluginsmanager.h"
 
-class AppCore : public QObject
+class AppCore: public IQCameron
 {
   Q_OBJECT
 public:
@@ -17,12 +18,17 @@ public:
 
   static void myMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg);
 
-  const QString VERSION ="1.0.0";
+  const QString VERSION ="1.1.0";
+
+  QString version() const override;
+  IServer *server() const override;
+  ISettings *settings() const override;
+  IPluginsManager *pluginsManager() const override;
 
 signals:
 
 public slots:
-  void appStart();
+  bool appStart();
 
 private:
   Settings *_settings =nullptr;

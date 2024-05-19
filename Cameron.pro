@@ -9,61 +9,65 @@ CONFIG += console
 
 
 SOURCES += main.cpp \
-    rtp/rtp_packet_h264.cpp \
-    rtp/rtp_packet_h264_unit_fu.cpp \
-    rtp/rtp_packet_h265.cpp \
-    rtp/rtp_packet_h265_unit_fu.cpp \
+    camera/camera.cpp \
+    rtp/rtppacket.cpp \
+    rtp/rtppacketh264.cpp \
+    rtp/rtppacketh264unitfu.cpp \
+    rtp/rtppacketh265.cpp \
+    rtp/rtppacketh265unitfu.cpp \
     rtsp/rtsp.cpp \
-    rtsp/rtsp_channel.cpp \
-    rtsp/rtsp_stream.cpp \
+    rtsp/rtspchannel.cpp \
+    rtsp/rtspstream.cpp \
     sdp/sdp.cpp \
+    server/serverclient.cpp \
+    server/serverclientinfo.cpp \
+    server/serverclientstreamer.cpp \
     settings/settings.cpp \
     appcore.cpp \
     server/server.cpp \
-    server/server_client.cpp \
     camera/cameras.cpp \
-    camera/cameras_camera.cpp \
-    server/server_client_streamer.cpp \
-    plugins/eventer.cpp \
-    plugins/pluginsmanager.cpp \
-    plugins/dynamicqobject.cpp \
-    rtp/rtp_packet.cpp \
-    server/server_client_info.cpp
+    plugins/pluginsmanager.cpp
 
 HEADERS += \
-    interfaces/IBuffer.h \
-    plugins/defines.h \
-    plugins/wpropertyinterface.h \
+    camera/camera.h \
     estd/estd.h \
-    rtp/rtp_packet_h264.h \
-    rtp/rtp_packet_h264_unit_fu.h \
-    rtp/rtp_packet_h265.h \
-    rtp/rtp_packet_h265_unit_fu.h \
+    interfaces/icamera.h \
+    interfaces/icameron.h \
+    interfaces/iplugininterface.h \
+    interfaces/ipluginsmanager.h \
+    interfaces/iqcamera.h \
+    interfaces/iqcameron.h \
+    interfaces/iqrtspstream.h \
+    interfaces/iqsettings.h \
+    interfaces/irtppacket.h \
+    interfaces/irtppacketh264.h \
+    interfaces/irtppacketh264unitfu.h \
+    interfaces/irtppacketh265.h \
+    interfaces/irtppacketh265unitfu.h \
+    interfaces/irtspstream.h \
+    interfaces/iserverclient.h \
+    interfaces/iserverclientinfo.h \
+    interfaces/isettings.h \
+    rtp/rtppacket.h \
+    rtp/rtppacketh264.h \
+    rtp/rtppacketh264unitfu.h \
+    rtp/rtppacketh265.h \
+    rtp/rtppacketh265unitfu.h \
     rtsp/rtsp.h \
-    rtsp/rtsp_channel.h \
-    rtsp/rtsp_stream.h \
+    rtsp/rtspchannel.h \
+    rtsp/rtspstream.h \
     sdp/sdp.h \
+    server/serverclient.h \
+    server/serverclientinfo.h \
+    server/serverclientstreamer.h \
     settings/settings.h \
     appcore.h \
     server/server.h \
-    server/server_client.h \
     camera/cameras.h \
-    camera/cameras_camera.h \
-    server/server_client_streamer.h \
-    plugins/eventer.h \
-    plugins/PluginEventsWrapper.h \
-    plugins/PluginInterface.h \
     plugins/pluginsmanager.h \
-    plugins/dynamicqobject.h \
-    plugins/usingleton.h \
-    interfaces/icameras_camera.h \
     interfaces/iserver.h \
     interfaces/icameras.h \
-    interfaces/isdp.h \
-    interfaces/irtsp_stream.h \
-    rtp/rtp_packet.h \
-    interfaces/irtp_packet.h \
-    server/server_client_info.h
+    interfaces/isdp.h
 
 DEFINES += QT_MESSAGELOGCONTEXT
 

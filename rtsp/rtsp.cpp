@@ -2,7 +2,7 @@
 #include <QRegularExpression>
 #include <QAuthenticator>
 #include "estd/estd.h"
-#include "rtsp/rtsp_channel.h"
+#include "rtsp/rtspchannel.h"
 
 namespace NS_RSTP {
 

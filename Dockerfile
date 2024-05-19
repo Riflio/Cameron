@@ -43,4 +43,4 @@ chmod +x /opt/Qt/Qt640/src/BUILD_QT.sh && /opt/Qt/Qt640/src/BUILD_QT.sh
 
 
 # Build App
-#CMD /APP/BUILD_APP.sh1
+CMD /APP/BUILD_APP.sh1

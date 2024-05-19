@@ -1,31 +1,32 @@
 #include "pluginsmanager.h"
+#include "interfaces/iplugininterface.h"
+
 #include <QDebug>
 
-PluginEvents *PluginEvents::_sInst =0;
-
-PluginsManager::PluginsManager(QObject *parent): PluginEventsBase(parent)
+PluginsManager::PluginsManager(ICameron *cameron, QObject *parent): QObject(parent), _cameron(cameron)
 {
-  _eventer =new Eventer(this);
-  connect(this, SIGNAL(doAction(QString,QVariantList)), _eventer, SLOT(doAction(QString,QVariantList)), Qt::DirectConnection);
-  connect(this, SIGNAL(addAction(QString,QObject*,const char*,Qt::ConnectionType)), _eventer, SLOT(addAction(QString,QObject*,const char*,Qt::ConnectionType)), Qt::DirectConnection);
-  new PluginEvents(this);
+
 }
 
-
+/**
+* @brief Загружаем плагины
+* @param path
+* @return
+*/
 bool PluginsManager::loadPlugins(QString path)
 {
   qInfo()<<"Load plugins";
   QDir dir(QDir::currentPath());
 
-  if (!dir.cd(path)) {
+  if ( !dir.cd(path) ) {
     qWarning()<<"Plugins directory does not exist"<< path;
     return false;
   }
 
   foreach (QString strFileName, dir.entryList(QStringList()<<"*.so", QDir::Files)) {
     QPluginLoader loader(dir.absoluteFilePath(strFileName));
-    PluginInterface * pI =qobject_cast<PluginInterface*>(loader.instance());
-    if (!pI) {
+    IPluginInterface *pI=qobject_cast<IPluginInterface*>(loader.instance());
+    if ( pI==nullptr ) {
       qWarning()<<"Module NOT loaded: "<<loader.errorString();
       continue;
     } else {
@@ -36,12 +37,29 @@ bool PluginsManager::loadPlugins(QString path)
     QString plDescr =loader.metaData().value("MetaData").toObject().value("Descr").toString();
     QString plVersion =loader.metaData().value("MetaData").toObject().value("Version").toString();
 
-    connect(loader.instance(), SIGNAL(doAction(QString, QVariantList)), Events, SIGNAL(doAction(QString, QVariantList)));
-    connect(loader.instance(), SIGNAL(addAction(QString, QObject*, const char*, Qt::ConnectionType)), Events, SIGNAL(addAction(QString, QObject*, const char*,Qt::ConnectionType)));
-    pI->Init();
+    if ( _plugins.contains(plName) ) { loader.unload(); continue; } //-- Уже есть одна копия, выгружаем новую
+
+    if ( !pI->init(_cameron) ) { qWarning()<<"Unable init plugin"<<plName; continue; }
+
+    _plugins[plName] =pI;
   }
 
-  emit Events->doAction("Inited", QVariantList());
-
   return true;
+}
+
+/**
+* @brief Выгружаем плагины
+*/
+void PluginsManager::unloadPlugins() //FIXME: Сделать
+{
+
+}
+
+/**
+* @brief Отдаём список загруженных плагинов
+* @return
+*/
+IPluginsManager::TPlugins PluginsManager::plugins() const
+{
+  return _plugins;
 }

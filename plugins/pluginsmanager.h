@@ -5,30 +5,29 @@
 #include <QDir>
 #include <QPluginLoader>
 
-#include "plugins/defines.h"
+#include "interfaces/ipluginsmanager.h"
+#include "interfaces/icameron.h"
 
-#include "plugins/PluginInterface.h"
-#include "plugins/PluginEventsWrapper.h"
-#include "plugins/eventer.h"
-
-class PluginsManager : public PluginEventsBase
+class PluginsManager: public QObject, public IPluginsManager
 {
   Q_OBJECT
 public:
-  explicit PluginsManager(QObject *parent = 0);
+  explicit PluginsManager(ICameron *cameron, QObject *parent =nullptr);
   bool loadPlugins(QString path);
+  void unloadPlugins();
+
+  TPlugins plugins() const override;
 
 signals:
-  void doAction(QString, QVariantList);
-  void addAction(QString, QObject *, const char *, Qt::ConnectionType connType = Qt::AutoConnection);
 
 public slots:
 
 private slots:
 
 private:
-  Eventer * _eventer;
-  QString _path;
+  ICameron *_cameron =nullptr;
+  TPlugins _plugins;
+
 };
 
 #endif // PLUGINSMANAGER_H

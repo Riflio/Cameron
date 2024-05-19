@@ -5,24 +5,24 @@
 #include <QFile>
 #include <QXmlStreamReader>
 
+#include "interfaces/iqsettings.h"
 #include "server/server.h"
 #include "camera/cameras.h"
 #include "plugins/pluginsmanager.h"
-#include "plugins/PluginEventsWrapper.h"
 
-class Settings : public QObject
+class Settings: public IQSettings
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit Settings(QObject *parent = 0);
-    bool load(Cameras * cameras, Server * server, PluginsManager * pluginsManager);
+  explicit Settings(QObject *parent =nullptr);
+  bool load(Cameras *cameras, Server *server, PluginsManager *pluginsManager);
 
 signals:
 
 public slots:
 
 private:
-    QFile* _settingsFile;
+  QFile* _settingsFile;
 
 };
 

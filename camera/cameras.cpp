@@ -10,9 +10,9 @@ Cameras::Cameras(QObject *parent) : QObject(parent)
 * @param id
 * @return
 */
-ICameras_Camera *Cameras::newCam(int id)
+ICamera *Cameras::newCam(int id)
 {
-  Cameras_Camera *cam = new Cameras_Camera(this);
+  Camera *cam =new Camera(this);
   _cams.insert(id, cam);
   return cam;
 }
@@ -22,7 +22,7 @@ ICameras_Camera *Cameras::newCam(int id)
 * @param id
 * @return
 */
-ICameras_Camera *Cameras::getCam(int id)
+ICamera *Cameras::getCam(int id)
 {
   return _cams.value(id, nullptr);
 }
@@ -37,22 +37,22 @@ ISDP *Cameras::getTotalSDP(int trackId)
   TCams::iterator i;
   SDP *sdp =new SDP(this);
   for (i=_cams.begin(); i!=_cams.end(); ++i) {
-    Cameras_Camera *cam =static_cast<Cameras_Camera*>(i.value());
+    Camera *cam =static_cast<Camera*>(i.value());
     if ( trackId>=0 && cam->id()!=trackId ) { continue; }
 
     //-- Если камера в ошибке, то попробуем сбросить
-    if ( cam->status()&Cameras_Camera::S_ERROR ) { cam->reset(); }
+    if ( cam->status()&Camera::S_ERROR ) { cam->reset(); }
 
     //-- Если камера ещё не запущена, то придётся ждать коннекта, иначе нам не получить SDP
-    while ( !(cam->status()&Cameras_Camera::S_CONNECTED) && !(cam->status()&Cameras_Camera::S_ERROR) ) {
-      if ( !(cam->status()&Cameras_Camera::S_STARTED) ) { //-- Если ещё не запустили, запускаем
+    while ( !(cam->status()&Camera::S_CONNECTED) && !(cam->status()&Camera::S_ERROR) ) {
+      if ( !(cam->status()&Camera::S_STARTED) ) { //-- Если ещё не запустили, запускаем
         if ( !cam->start() ) { break; }
       }
       QCoreApplication::processEvents();
     }
 
     //-- Если в итоге не удалось подключиться, пропускаем
-    if ( !(cam->status()&Cameras_Camera::S_CONNECTED) ) { continue; }
+    if ( !(cam->status()&Camera::S_CONNECTED) ) { continue; }
 
     SDP::sMedia *media =cam->getSDPMedia();
     media->attribytes.value("control")->value = (QString("track/%1").arg(cam->id())); //-- Подменим параметр управления на йдишник камеры, т.е. потока для уникальности среди потоков сервера.

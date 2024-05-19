@@ -1,14 +1,15 @@
 #include "settings.h"
 #include <QDebug>
 
-Settings::Settings(QObject *parent) : QObject(parent)
+Settings::Settings(QObject *parent): IQSettings(parent)
 {
 
 }
 
 
-bool Settings::load(Cameras * cameras, Server * server, PluginsManager * pluginsManager)
+bool Settings::load(Cameras *cameras, Server *server, PluginsManager *pluginsManager)
 {
+  if ( cameras==nullptr || server==nullptr || pluginsManager==nullptr ) { qWarning()<<"Unable load settings - wrong params"; return false; }
   qInfo()<<"Load settings";
 
   _settingsFile = new QFile("cameron.xml");
@@ -29,7 +30,7 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
     if ( token==QXmlStreamReader::StartElement ) {
       if ( xml.name()==QStringLiteral("cameras") )  { continue; }
       if ( xml.name()==QStringLiteral("camera") ) {
-        QXmlStreamAttributes attributes = xml.attributes();
+        QXmlStreamAttributes attributes =xml.attributes();
         if ( !attributes.hasAttribute("id") || !attributes.hasAttribute("url") ) { continue; }
         cameras->newCam(attributes.value("id").toInt())->setSettings(
           attributes.value("url").toString(),
@@ -39,23 +40,25 @@ bool Settings::load(Cameras * cameras, Server * server, PluginsManager * plugins
         );
       } else
       if ( xml.name()==QStringLiteral("server") ) {
-        QXmlStreamAttributes attributes = xml.attributes();
+        QXmlStreamAttributes attributes =xml.attributes();
         server->setSettings(attributes.value("host").toString(), attributes.value("port").toInt());
         if ( attributes.hasAttribute("blockSize") ) { server->setBlockSize(attributes.value("blockSize").toUInt()); }
       } else
       if ( xml.name()==QStringLiteral("plugins") ) {
-        QXmlStreamAttributes attributes = xml.attributes();
+        QXmlStreamAttributes attributes =xml.attributes();
         pluginsManager->loadPlugins(attributes.value("dir").toString());
       } else
       if ( xml.name()==QStringLiteral("users") ) {
         continue;
       } else
       if ( xml.name()==QStringLiteral("user") ) {
-        QXmlStreamAttributes attributes = xml.attributes();
+        QXmlStreamAttributes attributes =xml.attributes();
         server->addAvaliableUser(attributes.value("login").toString(), attributes.value("pass").toString());
       }
-      emit Events->doAction("LoadingSettings", QVariantList()<< xml.name().toString() << Events->ARG(&xml));
+      emit loadSettings(xml.name().toString(), &xml);
     }
   }
+
+  emit loaded();
   return true;
 }

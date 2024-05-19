@@ -3,9 +3,14 @@
 
 Server::Server(QObject *parent): QObject(parent)
 {
-  _server = new QTcpServer(this);
+  _server =new QTcpServer(this);
   connect(_server, &QTcpServer::newConnection, this, &Server::newClient);
   connect(_server, &QTcpServer::acceptError, this, &Server::serverError);
+}
+
+Server::~Server()
+{
+
 }
 
 bool Server::setSettings(QString host, int port)
@@ -32,7 +37,7 @@ bool Server::startServer()
     return false;
   }
   qInfo()<<"Server started";
-  emit Events->doAction("ServerStarted", QVariantList()<<Events->ARG(dynamic_cast<IServer*>(this)));
+  emit started(this);
   return true;
 }
 
@@ -42,10 +47,10 @@ bool Server::startServer()
 void Server::newClient()
 {
   qInfo()<<"New client";
-  Server_Client *client =new Server_Client(this, _server->nextPendingConnection(), this, _lastClientID++);
-  emit Events->doAction("NewClient", QVariantList()<<Events->ARG(client));
-  connect(client, &Server_Client::notAlive, this, &Server::delClient);
+  ServerClient *client =new ServerClient(this, _server->nextPendingConnection(), this, _lastClientID++);
+  connect(client, &ServerClient::notAlive, this, &Server::delClient);
   _clients.insert(client->clientID(), client);
+  emit clientConnected(client);
 }
 
 /**
@@ -53,17 +58,21 @@ void Server::newClient()
 */
 void Server::delClient(int clientID)
 {
-  if ( !_clients.contains(clientID) ) return;
+  if ( !_clients.contains(clientID) ) { return; }
   qInfo()<<"Client disconnected"<<clientID;
-  emit Events->doAction("DelClient", QVariantList()<<clientID);
-  _clients.value(clientID)->deleteLater();
+  ServerClient *client =_clients.value(clientID);
+  emit clientDisconnected(client);
+  client->deleteLater();
   _clients.remove(clientID);
 }
 
+/**
+* @brief Server::serverError
+*/
 void Server::serverError()
 {
   qWarning()<<"Server error!"<<_server->errorString();
-  emit Events->doAction("ServerError", QVariantList());
+  emit errored();
 }
 
 /**
@@ -71,12 +80,17 @@ void Server::serverError()
 * @return
 * @todo Сделать
 */
-bool Server::userHasAccess(Server_Client * client)
+bool Server::userHasAccess(ServerClient *client)
 {
+  Q_UNUSED(client);
   return true;
 }
 
-ICameras *Server::getCams()
+/**
+* @brief Server::getCams
+* @return
+*/
+ICameras *Server::getCams() const
 {
   return _cameras;
 }
@@ -91,11 +105,19 @@ void Server::addAvaliableUser(QString name, QString pass)
   _avaliableUsers[name] =pass;
 }
 
+/**
+* @brief Server::host
+* @return
+*/
 QHostAddress Server::host() const
 {
   return _host;
 }
 
+/**
+* @brief Server::port
+* @return
+*/
 int Server::port() const
 {
   return _port;
@@ -117,8 +139,4 @@ uint32_t Server::blockSize() const
 void Server::setBlockSize(uint32_t blockSize)
 {
   _blockSize =qMax(200U, blockSize);
-}
-
-Server::~Server()
-{
 }

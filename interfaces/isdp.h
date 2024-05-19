@@ -11,23 +11,23 @@ public:
   virtual ~ISDP() {}
 
   virtual bool parse(QByteArray data)=0;
-  virtual bool make(QByteArray & data)=0;
+  virtual bool make(QByteArray &data)=0;
 
-  //-- Время начала и ожидания сессии
+  /// @brief Время начала и ожидания сессии
   struct sTiming {
     int start =0;
     int stop =0;
   };
 
-  //-- Атрибуты базовой инфы/медиа
+  /// @brief Атрибуты базовой инфы/медиа
   class sAttribute {
   public:
-    QString name; //-- Название
-    QString value; //-- Значение
+    QString name; ///< Название
+    QString value; ///< Значение
     QMap<QString, QString> parameters; //-- Параметры атрибута
   };
 
-  //-- Базовая инфа
+  /// @brief Базовая инфа
   class sOrigin {
   public:
     int version; //-- Версия протокола
@@ -41,9 +41,7 @@ public:
     QMap<QString, sAttribute*> attribytes; //-- Аттрибуты. Ключ - название атрибута
   };
 
-
-
-  //-- Возможные типы медиа
+  /// @brief Возможные типы медиа
   enum mediaTypes {
     MT_VIDEO,
     MT_AUDIO
