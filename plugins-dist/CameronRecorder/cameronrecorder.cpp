@@ -93,7 +93,7 @@ void CameronRecorder::onCameronStarted()
     qInfo()<<"Init Recorder"<<settings.id;
 
     ICamera *cam =_cameron->server()->getCams()->getCam(settings.camID);
-    if ( cam==nullptr ) { qWarning()<<"Unable get cameraId"<<settings.camID<<"- skipped"; }
+    if ( cam==nullptr ) { qWarning()<<"Unable get cameraId"<<settings.camID<<"- skipped"; continue; }
     Recorder *recorder =new Recorder(this, cam, settings);
     if ( !recorder->init() ) { continue; }
     _recorders.insert(settings.id, recorder);
