@@ -113,7 +113,8 @@ void RTSP::onSckConnectReadyRead()
 
   if ( statusIt->second!="200 OK" ) {
     if ( statusIt->second=="401 Unauthorized" ) {
-     _authenticator.parseHttpResponse(respHeaders, false, _gateway.host());
+     //_authenticator.parseHttpResponse(respHeaders, false, _gateway.host());
+     _authenticator.parseHttpResponse(QHttpHeaders::fromListOfPairs(respHeaders), false, _gateway.host());
      if ( _authenticator.phase==QAuthenticatorPrivate::Invalid ) { qWarning()<<"Unable parse WWW-Authenticate"; emit errored(); return; }
      options(); //-- В любом случае заново запрашиваем опции что бы начать уже с авторизацией
      return;

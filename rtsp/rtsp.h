@@ -7,6 +7,8 @@
 #include <QTcpSocket>
 #include <QAuthenticator>
 #include <QtNetwork/private/qauthenticator_p.h>
+#include <QHttpHeaders>
+
 #include <QUrl>
 
 #include "sdp/sdp.h"
