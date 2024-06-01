@@ -37,10 +37,8 @@ void RTSPStream::onReadyRead()
     IRTPPacket *packet =nullptr;
     switch (RTPPacket::getPayloadType(ba)) {
       case RTPPacket::PT_H264: {
-        static RTPPacketH264 packetH264Temp(ba);
-        packetH264Temp.setData(ba);
-        if ( packetH264Temp.isFUUnit() ) {
-          RTPPacketH264UnitFU *packetH264FU =new RTPPacketH264UnitFU(std::move(ba));
+        RTPPacketH264UnitFU *packetH264FU =new RTPPacketH264UnitFU(std::move(ba));
+        if ( packetH264FU->isFUUnit() ) {
           //-- Соберём мета-информацию, если в пакете она
           switch (packetH264FU->nalType()) {
             case RTPPacketH264UnitFU::FU_A:
@@ -82,14 +80,14 @@ void RTSPStream::onReadyRead()
           }
           packet =packetH264FU;
         } else {
-          RTPPacketH264 *packetH264 =new RTPPacketH264(std::move(ba));
+          RTPPacketH264 *packetH264 =static_cast<RTPPacketH264 *>(packetH264FU);
           //-- Соберём мета-информацию, если в пакете она
           switch (packetH264->nalType()) {
             case IRTPPacketH264::SPS:
             case IRTPPacketH264::PPS:
             case IRTPPacketH264::SEI:
             case IRTPPacketH264::IDR: {
-              RTPPacket *packetRTP =dynamic_cast<RTPPacket *>(packetH264); //-- Нужно будет запомнить и заголовок H264 фрейма SPS/PPS/IDR
+              RTPPacket *packetRTP =static_cast<RTPPacket *>(packetH264); //-- Нужно будет запомнить и заголовок H264 фрейма SPS/PPS/IDR
               _metaInfo[packetH264->nalType()] =QByteArray((const char *)packetRTP->payloadData(), packetRTP->payloadLength());
               break;
             }
@@ -111,7 +109,7 @@ void RTSPStream::onReadyRead()
           switch (packeth265->nalType()) {
             case IRTPPacketH265::SPS:
             case IRTPPacketH265::PPS: {
-              RTPPacket *packetRTP =dynamic_cast<RTPPacket *>(packeth265); //-- Нужно будет запомнить и заголовок H265 фрейма SPS/PPS/IDR
+              RTPPacket *packetRTP =static_cast<RTPPacket *>(packeth265); //-- Нужно будет запомнить и заголовок H265 фрейма SPS/PPS/IDR
               _metaInfo[packeth265->nalType()] =QByteArray((const char *)packetRTP->payloadData(), packetRTP->payloadLength());
               break;
             }
