@@ -1,7 +1,7 @@
 # Cameron
 
 IP RTSP cameras retranslator server
-Сервер-ретранслятор.
+Сервер-ретранслятор для IP RTSP видеокамер.
 
 ![Принцип](readme_files/CameronPrinciple.png)
 
@@ -15,7 +15,7 @@ IP RTSP cameras retranslator server
 
 Посмотреть поток можно через VLC, запустить так: vlc rtsp://admin:pass@127.0.0.1:2666/track/1
 
-Собирается на Qt >=6.3 без каких-либо дополнительных библиотек и зависимостей. 
+Собирается на Qt >=6.8 без каких-либо дополнительных библиотек и зависимостей. 
 
 ## Возможности:
 
