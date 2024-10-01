@@ -228,7 +228,6 @@ void Camera::onTeardowned()
 */
 SDP::sMedia *Camera::getSDPMedia()
 {
-  qDebug()<<"Camera getSDP";
   return _rtsp->getChannel(_channel)->sdpMedia();
 }
 

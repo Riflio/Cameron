@@ -45,9 +45,10 @@ bool RecorderThread::setRecFileInfo(TRecFileInfo *recFileInfo)
   if ( !_outFile->open(QIODevice::WriteOnly | ( _recFileInfo->size==0? QIODevice::Truncate : QIODevice::Append)) ) { _busy =false; return false; }
 
   //-- Первым делом в него нужно записать SPS и PPS
-  if ( _camera->getSDPMedia()->attribytes.contains("fmtp") ) {
-    if ( _camera->getSDPMedia()->attribytes["fmtp"]->parameters.contains("sprop-parameter-sets") ) {
-      QStringList rawSPSPPS =_camera->getSDPMedia()->attribytes["fmtp"]->parameters["sprop-parameter-sets"].split(',');
+  const ISDP::sMedia *camSDP =_camera->getSDPMedia();
+  if ( camSDP->attribytes.contains("fmtp") ) {
+    if ( camSDP->attribytes["fmtp"]->parameters.contains("sprop-parameter-sets") ) {
+      QStringList rawSPSPPS =camSDP->attribytes["fmtp"]->parameters["sprop-parameter-sets"].split(',');
       if ( rawSPSPPS.count()==2 ) {
         //-- SPS
         writeToOutFile(QByteArrayLiteral("\x00\x00\x00\x01"));
