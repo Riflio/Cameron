@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QFile>
-#include "interfaces/iqrtspstream.h"
+#include "interfaces/icamera.h"
 #include "interfaces/recfileinfo.h"
 
 /**
@@ -20,7 +20,7 @@ signals:
   void errored();
 
 public slots:
-  bool setStreamer(NS_RSTP::IRTSPStream *streamer);
+  bool setCamera(ICamera *camera);
   bool setRecFileInfo(TRecFileInfo *recFileInfo);
 
   void onStarted();
@@ -36,11 +36,11 @@ protected:
 
 private:
   bool _busy =false;
-  NS_RSTP::IRTSPStream *_streamer =nullptr;
+  ICamera *_camera =nullptr;
   TRecFileInfo *_recFileInfo =nullptr;
   QFile *_outFile =nullptr;
-  bool _hasMetaInfo =false;
   QByteArray _frame;
+  bool _hasFirstIDRFrame =false;
 };
 
 #endif // RECORDERTHREAD_H

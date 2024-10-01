@@ -24,9 +24,6 @@ public:
 
   void onFinished();
 
-  const QMap<uint16_t, QByteArray> &metaInfo() const override;
-  bool setMetaInfo(const QMap<uint16_t, QByteArray> &newMetaInfo) override;
-
 signals:
   void completed();
   void connected();
@@ -43,7 +40,6 @@ private slots:
 private:
   int _port =0;
   QUdpSocket *_socket =nullptr;
-  QMap<uint16_t, QByteArray> _metaInfo;
 };
 
 }

@@ -33,7 +33,7 @@ bool Recorder::startRec()
   //-- Запустим камеру
   if ( !_camera->go() ) { return false; }
   //-- Установим
-  if ( !_recorderThread->setStreamer(_camera->getStreamer()) ) { return false; }
+  if ( !_recorderThread->setCamera(_camera) ) { return false; }
   //-- Сразу задаём информацию о файле записи
   if ( checkNeedNewFile() ) { if ( !makeNewRecFile() ) { return false; } }
   else { setRecorderThreadNewRecFileInfo(_curFileInfo); }

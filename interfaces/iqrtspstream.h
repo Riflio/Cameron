@@ -14,7 +14,6 @@ public:
 
 signals:
   void newPacketAvaliable(QSharedPointer<IRTPPacket> packet) override final;
-  void metaInfoChanged() override final;
 
 };
 

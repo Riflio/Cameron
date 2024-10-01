@@ -1,5 +1,6 @@
 #include "recorderthread.h"
 #include "interfaces/irtppacketh264unitfu.h"
+#include "interfaces/iqrtspstream.h"
 #include <QDebug>
 
 RecorderThread::RecorderThread(): QObject(nullptr)
@@ -13,14 +14,13 @@ RecorderThread::~RecorderThread()
 }
 
 /**
-* @brief Задают откуда брать кадры
+* @brief Задают камеру, с которой работать
 * @param streamer
 */
-bool RecorderThread::setStreamer(NS_RSTP::IRTSPStream *streamer)
+bool RecorderThread::setCamera(ICamera *camera)
 {
-  if ( streamer==nullptr ) { return false; }
-  _streamer =streamer;
-
+  if ( camera==nullptr ) { return false; }
+  _camera =camera;
   return true;
 }
 
@@ -42,9 +42,27 @@ bool RecorderThread::setRecFileInfo(TRecFileInfo *recFileInfo)
   else { _outFile =new QFile(this); }
 
   _outFile->setFileName(_recFileInfo->path);
-  if ( _outFile->open(QIODevice::WriteOnly | ( _recFileInfo->size==0? QIODevice::Truncate : QIODevice::Append)) ) { _busy =false; return false; }
+  if ( !_outFile->open(QIODevice::WriteOnly | ( _recFileInfo->size==0? QIODevice::Truncate : QIODevice::Append)) ) { _busy =false; return false; }
+
+  //-- Первым делом в него нужно записать SPS и PPS
+  if ( _camera->getSDPMedia()->attribytes.contains("fmtp") ) {
+    if ( _camera->getSDPMedia()->attribytes["fmtp"]->parameters.contains("sprop-parameter-sets") ) {
+      QStringList rawSPSPPS =_camera->getSDPMedia()->attribytes["fmtp"]->parameters["sprop-parameter-sets"].split(',');
+      if ( rawSPSPPS.count()==2 ) {
+        //-- SPS
+        writeToOutFile(QByteArrayLiteral("\x00\x00\x00\x01"));
+        writeToOutFile(QByteArray::fromBase64(rawSPSPPS[0].toUtf8()));
+        //-- PPS
+        writeToOutFile(QByteArrayLiteral("\x00\x00\x00\x01"));
+        writeToOutFile(QByteArray::fromBase64(rawSPSPPS[1].toUtf8()));
+        //-- IDS
+        _hasFirstIDRFrame =false; //-- Будем ждать в потоке кадров
+      }
+    }
+  }
 
 
+  //--
   _busy =false;
   return true;
 }
@@ -54,10 +72,9 @@ bool RecorderThread::setRecFileInfo(TRecFileInfo *recFileInfo)
 */
 void RecorderThread::onStarted()
 {
-  if ( _streamer==nullptr ) { emit errored(); return; }
+  if ( _camera==nullptr ) { emit errored(); return; }
   if ( _recFileInfo==nullptr ) { emit errored(); return; }
-  _hasMetaInfo =false;
-  connect(dynamic_cast<NS_RSTP::IQRTSPStream*>(_streamer), &NS_RSTP::IQRTSPStream::newPacketAvaliable, this, &RecorderThread::onNewFrameAvaliable, Qt::DirectConnection);
+  connect(dynamic_cast<NS_RSTP::IQRTSPStream*>(_camera->getStreamer()), &NS_RSTP::IQRTSPStream::newPacketAvaliable, this, &RecorderThread::onNewFrameAvaliable, Qt::DirectConnection);
 }
 
 /**
@@ -84,28 +101,15 @@ void RecorderThread::processNewFrame(QSharedPointer<IRTPPacket> packet)
     case IRTPPacket::PT_H264: {
       IRTPPacketH264 *packH264 =dynamic_cast<IRTPPacketH264 *>(packet.data());
 
-      //-- Первым в файле должно идти SPS, PPS, IDR, пока этого не будет неьлзя будет воспроизвести
-      if ( !_hasMetaInfo ) {
-        const QMap<uint16_t, QByteArray> &metaInfo =_streamer->metaInfo();
-        if ( !metaInfo.contains(IRTPPacketH264::SPS) || !metaInfo.contains(IRTPPacketH264::PPS) || !metaInfo.contains(IRTPPacketH264::IDR) || metaInfo[IRTPPacketH264::IDR].size()==0 ) { break; }
-        writeToOutFile(packH264->NAL_DELEMITER);
-        writeToOutFile(metaInfo[IRTPPacketH264::SPS]);
-        writeToOutFile(packH264->NAL_DELEMITER);
-        writeToOutFile(metaInfo[IRTPPacketH264::PPS]);
-        if ( metaInfo.contains(IRTPPacketH264::SEI) ) {
-          writeToOutFile(packH264->NAL_DELEMITER);
-          writeToOutFile(metaInfo[IRTPPacketH264::SEI]);
-        }
-        writeToOutFile(packH264->NAL_DELEMITER);
-        writeToOutFile(metaInfo[IRTPPacketH264::IDR]);
-        _hasMetaInfo =true;
-        break;
-      }
       //-- Сами данные фрейма
       switch (packH264->nalType()) {
         case IRTPPacketH264::FU_A:
         case IRTPPacketH264::FU_B: { //-- Фрейм разбит на несколько частей
           IRTPPacketH264UnitFU *packH264FU =dynamic_cast<IRTPPacketH264UnitFU *>(packet.data());
+          //-- Если у нас ещё не было IDR фрейма, то подождём, перед началом записи
+          if ( !_hasFirstIDRFrame && packH264FU->fuType()!=IRTPPacketH264::IDR ) { break; }
+          else { _hasFirstIDRFrame =true; }
+          //-- Собираем и пишем конечный фрейм целиком, игноря ошибочные
           switch (packH264FU->fuPart()) {
             case IRTPPacketH264UnitFU::FU_START: {
               _frame.clear();
@@ -130,6 +134,10 @@ void RecorderThread::processNewFrame(QSharedPointer<IRTPPacket> packet)
           break;
         }
         default: { //-- Остальные типы фреймов пишем как есть
+          //-- Если у нас ещё не было IDR фрейма, то подождём, перед началом записи
+          if ( !_hasFirstIDRFrame && packH264->nalType()!=IRTPPacketH264::IDR ) { break; }
+          else { _hasFirstIDRFrame =true; }
+          //-- Пишем фреймы
           _frame.clear();
           _frame.append(packH264->NAL_DELEMITER);
           _frame.append(packH264->nalHeader());
@@ -142,7 +150,6 @@ void RecorderThread::processNewFrame(QSharedPointer<IRTPPacket> packet)
       break;
     }
     case IRTPPacket::PT_H265: {
-      qDebug()<<"H265";
       break;
     }
     default: { qDebug()<<"UNKNOWN TYPE"<<packet->payloadType(); break; }
