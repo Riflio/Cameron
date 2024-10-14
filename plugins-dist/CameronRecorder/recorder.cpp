@@ -14,6 +14,8 @@ Recorder::Recorder(QObject *parent, ICamera *camera, const TRecorderSettings &se
   _makeNewRecFileIfNeedTimer =new QTimer(this);
   _makeNewRecFileIfNeedTimer->setInterval(1000); //TODO: В настройки время проверки
   connect(_makeNewRecFileIfNeedTimer, &QTimer::timeout, this, &Recorder::makeNewRecFileIfNeed);
+  //-- Обрабатываем ошибки камеры
+  connect(dynamic_cast<QObject*>(_camera), SIGNAL(errored()), this, SLOT(onCameraError()));
 }
 
 Recorder::~Recorder()
@@ -111,7 +113,8 @@ void Recorder::onCameraError()
 {
   //-- Останавливаем запись
   stopRec();
-  //FIXME: Перезапуск камеры
+  //-- Попробуем перезапустить спустя секунду, что бы не заддосить
+  QTimer::singleShot(1000, [this](){ startRec(); });
 }
 
 /**
